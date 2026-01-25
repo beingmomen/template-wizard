@@ -1,4 +1,6 @@
 <script setup>
+import { projectTypeOptions } from '~/schemas/quickReference.schema'
+
 const { state, updateField } = useWizardState()
 
 const sizeOptions = [
@@ -42,6 +44,28 @@ watch(() => state.value.projectName, (name) => {
 
 <template>
   <div class="space-y-6">
+    <!-- Project Type -->
+    <UFormField label="نوع المشروع" name="projectType" required>
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        <UCard
+          v-for="type in projectTypeOptions"
+          :key="type.value"
+          class="cursor-pointer transition-all hover:shadow-md"
+          :class="state.projectType === type.value ? 'ring-2 ring-primary shadow-md' : 'hover:ring-1 hover:ring-gray-300'"
+          :ui="{ body: 'p-3' }"
+          @click="updateField('projectType', type.value)"
+        >
+          <div class="flex flex-col items-center text-center gap-2">
+            <UIcon :name="type.icon" class="text-2xl" :class="state.projectType === type.value ? 'text-primary' : 'text-gray-500'" />
+            <div>
+              <p class="font-medium text-sm">{{ type.labelAr }}</p>
+              <p class="text-xs text-gray-500 mt-1">{{ type.descAr }}</p>
+            </div>
+          </div>
+        </UCard>
+      </div>
+    </UFormField>
+
     <!-- Project Size -->
     <UFormField label="حجم المشروع" name="projectSize" required>
       <URadioGroup
@@ -78,6 +102,7 @@ watch(() => state.value.projectName, (name) => {
         v-model="state.problemStatement"
         placeholder="ما المشكلة التي يحلها المشروع؟ من يعاني منها؟"
         :rows="4"
+        autoresize
       />
     </UFormField>
 
@@ -87,6 +112,7 @@ watch(() => state.value.projectName, (name) => {
         v-model="state.solutionDescription"
         placeholder="كيف يحل المشروع هذه المشكلة؟ ما الذي يميز حلك؟"
         :rows="4"
+        autoresize
       />
     </UFormField>
 
@@ -95,7 +121,8 @@ watch(() => state.value.projectName, (name) => {
       <UTextarea
         v-model="state.targetUsers"
         placeholder="من سيستخدم المشروع؟ صف الفئة المستهدفة بالتفصيل"
-        :rows="3"
+        :rows="4"
+        autoresize
       />
     </UFormField>
 

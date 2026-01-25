@@ -1,7 +1,8 @@
 import type { ZodSchema } from 'zod'
 import { quickReferenceSchema } from '~/schemas/quickReference.schema'
 import { userStoriesSchema } from '~/schemas/userStories.schema'
-import { technicalSchema } from '~/schemas/technical.schema'
+import { permissionsSchema } from '~/schemas/permissions.schema'
+import { createTechnicalSchema, technicalSchema } from '~/schemas/technical.schema'
 import { databaseSchema } from '~/schemas/database.schema'
 import { apiSchema } from '~/schemas/api.schema'
 import { frontendSchema } from '~/schemas/frontend.schema'
@@ -9,38 +10,102 @@ import { featuresSchemaSmall, featuresSchemaExtended } from '~/schemas/features.
 import { dependenciesSchema } from '~/schemas/dependencies.schema'
 import type { WizardState } from '~/types/wizard.types'
 
-export function useStepValidation() {
-  const { state, requiresExtendedFeatures } = useWizardState()
+const fieldTranslations: Record<string, string> = {
+  apiGroups: 'مجموعة API',
+  endpoints: 'Endpoint',
+  tables: 'جدول',
+  columns: 'عمود',
+  frontendModules: 'Module',
+  pages: 'صفحة',
+  userTypes: 'نوع المستخدم',
+  stories: 'قصة',
+  permissions: 'صلاحية',
+  roles: 'دور',
+  externalServices: 'خدمة خارجية',
+  environmentVariables: 'متغير بيئة',
+  mvpFeatures: 'ميزة MVP',
+  futureFeatures: 'ميزة مستقبلية',
+  edgeCases: 'حالة حدية',
+  implementationPhases: 'مرحلة',
+  queryParameters: 'Query Parameter',
+  name: 'الاسم',
+  description: 'الوصف',
+  path: 'المسار',
+  method: 'الطريقة',
+  tableName: 'اسم الجدول',
+  basePath: 'المسار الأساسي',
+  userType: 'نوع المستخدم',
+  story: 'القصة',
+  type: 'النوع',
+  constraints: 'القيود',
+  authRequired: 'المصادقة',
+  requiredPermissions: 'الصلاحيات المطلوبة',
+  projectName: 'اسم المشروع',
+  projectNameTechnical: 'الاسم التقني',
+  problemStatement: 'وصف المشكلة',
+  solutionDescription: 'وصف الحل',
+  targetUsers: 'المستخدمين المستهدفين'
+}
 
-  // Get schema for specific step
-  const getSchemaForStep = (step: number): ZodSchema | null => {
-    switch (step) {
+function formatErrorPath(path: (string | number)[]): string {
+  if (path.length === 0) return ''
+
+  const parts: string[] = []
+  for (let i = 0; i < path.length; i++) {
+    const segment = path[i]
+    if (typeof segment === 'number') {
+      parts.push(`رقم ${segment + 1}`)
+    } else {
+      const translation = fieldTranslations[segment]
+      if (translation) {
+        parts.push(translation)
+      } else {
+        parts.push(segment)
+      }
+    }
+  }
+  return parts.join(' > ')
+}
+
+export function useStepValidation() {
+  const { state, requiresExtendedFeatures, currentStepInfo, visibleSteps } = useWizardState()
+
+  const getSchemaForStep = (stepId: number): ZodSchema | null => {
+    const projectType = state.value.projectType || 'fullstack'
+
+    switch (stepId) {
       case 0:
         return quickReferenceSchema
       case 1:
         return userStoriesSchema
       case 2:
-        return technicalSchema
+        return permissionsSchema
       case 3:
-        return databaseSchema
+        return createTechnicalSchema(projectType)
       case 4:
-        return apiSchema
+        return null
       case 5:
-        return frontendSchema
+        return databaseSchema
       case 6:
-        return requiresExtendedFeatures.value ? featuresSchemaExtended : featuresSchemaSmall
+        return null
       case 7:
+        return apiSchema
+      case 8:
+        return frontendSchema
+      case 9:
+        return requiresExtendedFeatures.value ? featuresSchemaExtended : featuresSchemaSmall
+      case 10:
         return dependenciesSchema
       default:
         return null
     }
   }
 
-  // Get data for specific step from state
-  const getDataForStep = (step: number): Partial<WizardState> => {
-    switch (step) {
+  const getDataForStep = (stepId: number): Partial<WizardState> => {
+    switch (stepId) {
       case 0:
         return {
+          projectType: state.value.projectType,
           projectSize: state.value.projectSize,
           projectName: state.value.projectName,
           projectNameTechnical: state.value.projectNameTechnical,
@@ -57,27 +122,40 @@ export function useStepValidation() {
         }
       case 2:
         return {
-          techStack: state.value.techStack,
-          architecture: state.value.architecture,
-          multiTenancy: state.value.multiTenancy
+          permissionsConfig: state.value.permissionsConfig,
+          permissions: state.value.permissions,
+          roles: state.value.roles
         }
       case 3:
+        return {
+          techStack: state.value.techStack,
+          architecture: state.value.architecture,
+          multiTenancy: state.value.multiTenancy,
+          externalServices: state.value.externalServices
+        }
+      case 4:
+        return {}
+      case 5:
         return {
           tables: state.value.tables,
           relationships: state.value.relationships
         }
-      case 4:
+      case 6:
+        return {}
+      case 7:
         return {
           apiStyle: state.value.apiStyle,
           routePrefix: state.value.routePrefix,
-          endpoints: state.value.endpoints
+          endpoints: state.value.endpoints,
+          apiGroups: state.value.apiGroups
         }
-      case 5:
+      case 8:
         return {
           pages: state.value.pages,
+          frontendModules: state.value.frontendModules,
           sharedComponents: state.value.sharedComponents
         }
-      case 6:
+      case 9:
         return {
           mvpFeatures: state.value.mvpFeatures,
           futureFeatures: state.value.futureFeatures,
@@ -85,7 +163,7 @@ export function useStepValidation() {
           edgeCases: state.value.edgeCases,
           implementationPhases: state.value.implementationPhases
         }
-      case 7:
+      case 10:
         return {
           backendDependencies: state.value.backendDependencies,
           frontendDependencies: state.value.frontendDependencies,
@@ -97,12 +175,15 @@ export function useStepValidation() {
     }
   }
 
-  // Validate specific step
-  const validateStep = (step: number): { valid: boolean; errors: string[] } => {
-    const schema = getSchemaForStep(step)
+  const validateStep = (visibleIndex: number): { valid: boolean; errors: string[] } => {
+    const step = visibleSteps.value[visibleIndex]
+    if (!step) return { valid: true, errors: [] }
+
+    const stepId = step.id
+    const schema = getSchemaForStep(stepId)
     if (!schema) return { valid: true, errors: [] }
 
-    const data = getDataForStep(step)
+    const data = getDataForStep(stepId)
     const result = schema.safeParse(data)
 
     if (result.success) {
@@ -110,14 +191,13 @@ export function useStepValidation() {
     }
 
     const errors = result.error.issues.map((issue) => {
-      const path = issue.path.join('.')
-      return path ? `${path}: ${issue.message}` : issue.message
+      const formattedPath = formatErrorPath(issue.path)
+      return formattedPath ? `${formattedPath}: ${issue.message}` : issue.message
     })
 
     return { valid: false, errors }
   }
 
-  // Validate current step
   const validateCurrentStep = (): { valid: boolean; errors: string[] } => {
     const { currentStep } = useWizardState()
     return validateStep(currentStep.value)

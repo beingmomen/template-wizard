@@ -203,7 +203,8 @@ Users:
 
 Products:
 - name: لابتوب HP, price: 15000, stock: 10"
-        :rows="8"
+        :rows="4"
+        autoresize
       />
     </UFormField>
   </div>

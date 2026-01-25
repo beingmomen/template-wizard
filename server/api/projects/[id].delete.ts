@@ -12,27 +12,24 @@ export default defineEventHandler(async (event) => {
     }
 
     const db = await connectToDatabase()
-    const project = await db.collection('projects').findOne(
-      { projectId },
-      { projection: { _id: 0 } }
-    )
+    const result = await db.collection('projects').deleteOne({ projectId })
 
-    if (!project) {
+    if (result.deletedCount === 0) {
       throw createError({
         statusCode: 404,
         message: 'Project not found'
       })
     }
 
-    return { project }
+    return { success: true }
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'statusCode' in error) {
       throw error
     }
-    console.error('Error fetching project:', error)
+    console.error('Failed to delete project:', error)
     throw createError({
       statusCode: 500,
-      message: 'Failed to fetch project'
+      message: 'Failed to delete project'
     })
   }
 })

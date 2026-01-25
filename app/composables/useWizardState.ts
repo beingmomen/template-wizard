@@ -1,28 +1,66 @@
 import { nanoid } from 'nanoid'
 import { useDebounceFn } from '@vueuse/core'
-import { initialWizardState, WIZARD_STEPS } from '~/types/wizard.types'
-import type { WizardState, WizardStep } from '~/types/wizard.types'
+import { initialWizardState, WIZARD_STEPS, ALL_PROJECT_TYPES } from '~/types/wizard.types'
+import type { WizardState, WizardStep, ProjectType } from '~/types/wizard.types'
 
 const STORAGE_KEY = 'project-template-wizard-state'
 const DEVICE_ID_KEY = 'wizard-device-id'
 const CURRENT_PROJECT_KEY = 'current-project-id'
 
 export function useWizardState() {
-  // Central state using useState for SSR compatibility
   const state = useState<WizardState>('wizard-state', () => ({ ...initialWizardState }))
   const currentStep = useState<number>('wizard-current-step', () => 0)
+  const currentProjectId = useState<string | null>('wizard-current-project-id', () => null)
   const isSaving = useState<boolean>('wizard-is-saving', () => false)
   const isAutoSaving = useState<boolean>('wizard-is-auto-saving', () => false)
   const lastSaved = useState<Date | null>('wizard-last-saved', () => null)
+  const isLoading = useState<boolean>('wizard-is-loading', () => false)
+  const skipNextAutoSave = useState<boolean>('wizard-skip-auto-save', () => false)
 
-  // Computed: Get visible steps
-  const visibleSteps = computed<WizardStep[]>(() => WIZARD_STEPS)
+  // Computed: Get visible steps based on project type
+  const visibleSteps = computed<WizardStep[]>(() => {
+    const projectType = state.value.projectType || 'fullstack'
+    return WIZARD_STEPS.filter(step => {
+      if (!step.visibleFor) return true
+      return step.visibleFor.includes(projectType)
+    })
+  })
+
+  // Helper: Check if project needs frontend
+  const needsFrontend = computed(() =>
+    ['fullstack', 'frontend-only', 'chrome-extension'].includes(state.value.projectType)
+  )
+
+  // Helper: Check if project needs backend
+  const needsBackend = computed(() =>
+    ['fullstack', 'backend-only'].includes(state.value.projectType)
+  )
+
+  // Helper: Check if project needs database
+  const needsDatabase = computed(() =>
+    ['fullstack', 'backend-only'].includes(state.value.projectType)
+  )
+
+  // Helper: Check if a specific step is visible
+  const isStepVisible = (stepId: number): boolean => {
+    return visibleSteps.value.some(s => s.id === stepId)
+  }
+
+  // Helper: Get visible step index from step id
+  const getVisibleStepIndex = (stepId: number): number => {
+    return visibleSteps.value.findIndex(s => s.id === stepId)
+  }
+
+  // Helper: Get step id from visible index
+  const getStepIdFromVisibleIndex = (visibleIndex: number): number => {
+    return visibleSteps.value[visibleIndex]?.id ?? 0
+  }
 
   // Computed: Check if current project requires extended features
   const requiresExtendedFeatures = computed(() => state.value.projectSize !== 'small')
 
   // Computed: Is last step?
-  const isLastStep = computed(() => currentStep.value === WIZARD_STEPS.length - 1)
+  const isLastStep = computed(() => currentStep.value === visibleSteps.value.length - 1)
 
   // Computed: Is first step?
   const isFirstStep = computed(() => currentStep.value === 0)
@@ -58,7 +96,6 @@ export function useWizardState() {
   // Update specific field in state
   const updateField = <K extends keyof WizardState>(key: K, value: WizardState[K]) => {
     state.value[key] = value
-    saveToLocalStorage()
   }
 
   // Update nested field
@@ -69,12 +106,11 @@ export function useWizardState() {
   ) => {
     // @ts-ignore - TypeScript has trouble with this nested update
     state.value[key][nestedKey] = value
-    saveToLocalStorage()
   }
 
   // Go to next step
   const nextStep = () => {
-    if (currentStep.value < WIZARD_STEPS.length - 1) {
+    if (currentStep.value < visibleSteps.value.length - 1) {
       currentStep.value++
     }
   }
@@ -86,12 +122,15 @@ export function useWizardState() {
     }
   }
 
-  // Go to specific step
+  // Go to specific step (visible index)
   const goToStep = (step: number) => {
-    if (step >= 0 && step < WIZARD_STEPS.length) {
+    if (step >= 0 && step < visibleSteps.value.length) {
       currentStep.value = step
     }
   }
+
+  // Get current step info
+  const currentStepInfo = computed(() => visibleSteps.value[currentStep.value])
 
   // Reset state to initial
   const resetState = () => {
@@ -103,79 +142,145 @@ export function useWizardState() {
     }
   }
 
-  // Save state to localStorage
+  // Save state to localStorage (cache only)
   const saveToLocalStorage = () => {
     if (import.meta.client) {
-      isAutoSaving.value = true
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state.value))
-        lastSaved.value = new Date()
       } catch (e) {
-        console.error('Failed to save wizard state:', e)
-      } finally {
-        // Hide saving indicator after a short delay
-        setTimeout(() => {
-          isAutoSaving.value = false
-        }, 500)
+        console.error('Failed to save to localStorage:', e)
       }
     }
   }
 
-  // Debounced auto-save function (300ms delay)
+  // Save to database
+  const saveToDatabase = async () => {
+    if (!currentProjectId.value) return
+
+    isAutoSaving.value = true
+    try {
+      await $fetch('/api/projects', {
+        method: 'POST',
+        body: {
+          projectId: currentProjectId.value,
+          data: state.value
+        }
+      })
+      lastSaved.value = new Date()
+      saveToLocalStorage()
+    } catch (e) {
+      console.error('Failed to save to database:', e)
+    } finally {
+      setTimeout(() => {
+        isAutoSaving.value = false
+      }, 500)
+    }
+  }
+
+  // Debounced auto-save function (1000ms delay)
   const debouncedAutoSave = useDebounceFn(() => {
-    saveToLocalStorage()
-  }, 300)
+    saveToDatabase()
+  }, 1000)
 
   // Deep watch on state to auto-save any changes
   watch(
     () => state.value,
     () => {
-      if (import.meta.client) {
+      if (skipNextAutoSave.value) {
+        skipNextAutoSave.value = false
+        return
+      }
+      if (import.meta.client && currentProjectId.value && !isLoading.value) {
         debouncedAutoSave()
       }
     },
     { deep: true }
   )
 
-  // Load state from localStorage
+  // Load state from localStorage (cache)
   const loadFromLocalStorage = () => {
     if (import.meta.client) {
       try {
         const saved = localStorage.getItem(STORAGE_KEY)
         if (saved) {
           const parsed = JSON.parse(saved)
-          // Merge with initial state to handle new fields
           state.value = { ...initialWizardState, ...parsed }
         }
       } catch (e) {
-        console.error('Failed to load wizard state:', e)
+        console.error('Failed to load from localStorage:', e)
       }
     }
   }
 
-  // Save to MongoDB Cloud
-  const saveToCloud = async (): Promise<{ success: boolean; projectId?: string; error?: string }> => {
-    if (!import.meta.client) return { success: false, error: 'Not on client' }
-
+  // Create a new project in database
+  const createProject = async (): Promise<string | null> => {
     isSaving.value = true
     try {
-      const deviceId = getDeviceId()
-      const projectId = getCurrentProjectId()
-
       const response = await $fetch('/api/projects', {
         method: 'POST',
         body: {
-          data: state.value,
-          deviceId,
-          projectId
+          data: { ...initialWizardState }
         }
       })
 
       if (response.projectId) {
-        setCurrentProjectId(response.projectId)
+        currentProjectId.value = response.projectId
+        state.value = { ...initialWizardState }
+        currentStep.value = 0
+        return response.projectId
       }
+      return null
+    } catch (error) {
+      console.error('Failed to create project:', error)
+      return null
+    } finally {
+      isSaving.value = false
+    }
+  }
 
-      return { success: true, projectId: response.projectId }
+  // Load project from database
+  const loadProject = async (projectId: string): Promise<boolean> => {
+    isLoading.value = true
+    try {
+      const response = await $fetch(`/api/projects/${projectId}`)
+
+      if (response.project) {
+        skipNextAutoSave.value = true
+        state.value = { ...initialWizardState, ...response.project.data }
+        currentProjectId.value = projectId
+        saveToLocalStorage()
+        currentStep.value = 0
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('Failed to load project:', error)
+      return false
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // Save to MongoDB Cloud (manual save - kept for compatibility)
+  const saveToCloud = async (): Promise<{ success: boolean; projectId?: string; error?: string }> => {
+    if (!currentProjectId.value) {
+      const newProjectId = await createProject()
+      if (newProjectId) {
+        return { success: true, projectId: newProjectId }
+      }
+      return { success: false, error: 'فشل في إنشاء المشروع' }
+    }
+
+    isSaving.value = true
+    try {
+      await $fetch('/api/projects', {
+        method: 'POST',
+        body: {
+          projectId: currentProjectId.value,
+          data: state.value
+        }
+      })
+      return { success: true, projectId: currentProjectId.value }
     } catch (error) {
       console.error('Failed to save to cloud:', error)
       return { success: false, error: 'فشل في حفظ المشروع' }
@@ -184,67 +289,176 @@ export function useWizardState() {
     }
   }
 
-  // Load from MongoDB Cloud
+  // Load from MongoDB Cloud (kept for compatibility)
   const loadFromCloud = async (projectId: string): Promise<{ success: boolean; error?: string }> => {
-    if (!import.meta.client) return { success: false, error: 'Not on client' }
-
-    try {
-      const deviceId = getDeviceId()
-      const response = await $fetch(`/api/projects/${projectId}`, {
-        query: { deviceId }
-      })
-
-      if (response.project) {
-        state.value = { ...initialWizardState, ...response.project.data }
-        setCurrentProjectId(projectId)
-        saveToLocalStorage()
-        currentStep.value = 0
-      }
-
+    const success = await loadProject(projectId)
+    if (success) {
       return { success: true }
-    } catch (error) {
-      console.error('Failed to load from cloud:', error)
-      return { success: false, error: 'فشل في تحميل المشروع' }
     }
+    return { success: false, error: 'فشل في تحميل المشروع' }
   }
 
-  // Fetch projects list from MongoDB
-  const fetchProjects = async (): Promise<Array<{
-    projectId: string
-    projectName: string
-    projectNameTechnical: string
-    createdAt: string
-    updatedAt: string
-  }>> => {
-    if (!import.meta.client) return []
-
+  // Fetch projects list from MongoDB with pagination and filtering
+  const fetchProjects = async (options?: {
+    page?: number
+    limit?: number
+    status?: string
+    archived?: boolean
+  }): Promise<{
+    projects: Array<{
+      projectId: string
+      projectName: string
+      projectNameTechnical: string
+      projectStatus: string
+      createdAt: string
+      updatedAt: string
+    }>
+    pagination: {
+      page: number
+      limit: number
+      total: number
+      totalPages: number
+    }
+  }> => {
     try {
-      const deviceId = getDeviceId()
-      const response = await $fetch('/api/projects', {
-        query: { deviceId }
-      })
-      return response.projects || []
+      const params = new URLSearchParams()
+      if (options?.page) params.append('page', String(options.page))
+      if (options?.limit) params.append('limit', String(options.limit))
+      if (options?.status) params.append('status', options.status)
+      if (options?.archived) params.append('archived', 'true')
+
+      const response = await $fetch(`/api/projects?${params}`)
+      return {
+        projects: response.projects || [],
+        pagination: response.pagination || { page: 1, limit: 5, total: 0, totalPages: 0 }
+      }
     } catch (error) {
       console.error('Failed to fetch projects:', error)
-      return []
+      return {
+        projects: [],
+        pagination: { page: 1, limit: 5, total: 0, totalPages: 0 }
+      }
     }
   }
 
-  // Initialize - load from localStorage on client
-  onMounted(() => {
-    loadFromLocalStorage()
-  })
+  // Fetch project counts by status
+  const fetchProjectCounts = async (): Promise<{
+    all: number
+    planning: number
+    planned: number
+    completed: number
+    archived: number
+  }> => {
+    try {
+      const response = await $fetch('/api/projects?countOnly=true')
+      return response.counts || { all: 0, planning: 0, planned: 0, completed: 0, archived: 0 }
+    } catch (error) {
+      console.error('Failed to fetch project counts:', error)
+      return { all: 0, planning: 0, planned: 0, completed: 0, archived: 0 }
+    }
+  }
+
+  // Update project status
+  const updateProjectStatus = async (projectId: string, status: string): Promise<boolean> => {
+    try {
+      const response = await $fetch(`/api/projects/${projectId}`)
+      if (response.project) {
+        const updatedData = { ...response.project.data, projectStatus: status }
+        await $fetch('/api/projects', {
+          method: 'POST',
+          body: { projectId, data: updatedData }
+        })
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('Failed to update project status:', error)
+      return false
+    }
+  }
+
+  // Delete project from MongoDB (hard delete)
+  const deleteProject = async (projectId: string): Promise<boolean> => {
+    try {
+      await $fetch(`/api/projects/${projectId}`, { method: 'DELETE' })
+      if (currentProjectId.value === projectId) {
+        currentProjectId.value = null
+        state.value = { ...initialWizardState }
+        if (import.meta.client) {
+          localStorage.removeItem(STORAGE_KEY)
+          localStorage.removeItem(CURRENT_PROJECT_KEY)
+        }
+      }
+      return true
+    } catch (error) {
+      console.error('Failed to delete project:', error)
+      return false
+    }
+  }
+
+  // Soft delete project (archive)
+  const softDeleteProject = async (projectId: string): Promise<boolean> => {
+    try {
+      const response = await $fetch(`/api/projects/${projectId}`)
+      if (response.project) {
+        const updatedData = {
+          ...response.project.data,
+          deletedAt: new Date().toISOString()
+        }
+        await $fetch('/api/projects', {
+          method: 'POST',
+          body: { projectId, data: updatedData }
+        })
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('Failed to soft delete project:', error)
+      return false
+    }
+  }
+
+  // Restore archived project
+  const restoreProject = async (projectId: string): Promise<boolean> => {
+    try {
+      const response = await $fetch(`/api/projects/${projectId}`)
+      if (response.project) {
+        const updatedData = {
+          ...response.project.data,
+          deletedAt: null
+        }
+        await $fetch('/api/projects', {
+          method: 'POST',
+          body: { projectId, data: updatedData }
+        })
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('Failed to restore project:', error)
+      return false
+    }
+  }
 
   return {
     state,
     currentStep,
+    currentProjectId,
+    currentStepInfo,
     visibleSteps,
     requiresExtendedFeatures,
     isLastStep,
     isFirstStep,
     isSaving,
     isAutoSaving,
+    isLoading,
     lastSaved,
+    needsFrontend,
+    needsBackend,
+    needsDatabase,
+    isStepVisible,
+    getVisibleStepIndex,
+    getStepIdFromVisibleIndex,
     updateField,
     updateNestedField,
     nextStep,
@@ -255,7 +469,14 @@ export function useWizardState() {
     loadFromLocalStorage,
     saveToCloud,
     loadFromCloud,
+    createProject,
+    loadProject,
     fetchProjects,
+    fetchProjectCounts,
+    updateProjectStatus,
+    deleteProject,
+    softDeleteProject,
+    restoreProject,
     getDeviceId,
     getCurrentProjectId,
     setCurrentProjectId

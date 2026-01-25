@@ -4,12 +4,12 @@ import { connectToDatabase } from '~~/server/utils/mongodb'
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event)
-    const { data, deviceId, projectId } = body
+    const { data, projectId } = body
 
-    if (!data || !deviceId) {
+    if (!data) {
       throw createError({
         statusCode: 400,
-        message: 'data and deviceId are required'
+        message: 'data is required'
       })
     }
 
@@ -17,9 +17,8 @@ export default defineEventHandler(async (event) => {
     const collection = db.collection('projects')
 
     if (projectId) {
-      // تحديث مشروع موجود
       const result = await collection.updateOne(
-        { projectId, deviceId },
+        { projectId },
         {
           $set: {
             data,
@@ -40,14 +39,12 @@ export default defineEventHandler(async (event) => {
       return { success: true, projectId }
     }
 
-    // إنشاء مشروع جديد
     const newProjectId = nanoid(10)
     await collection.insertOne({
       projectId: newProjectId,
       projectName: data.projectName || '',
       projectNameTechnical: data.projectNameTechnical || '',
       data,
-      deviceId,
       createdAt: new Date(),
       updatedAt: new Date()
     })

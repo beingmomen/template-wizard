@@ -1,10 +1,9 @@
 <script setup>
-const { state, currentStep, visibleSteps, isFirstStep, isLastStep, nextStep, prevStep, saveToCloud, isSaving, isAutoSaving, lastSaved } = useWizardState()
+const { state, currentStep, visibleSteps, isFirstStep, isLastStep, nextStep, prevStep, isAutoSaving, lastSaved, currentProjectId, updateField, deleteProject, softDeleteProject } = useWizardState()
 const { validateStep } = useStepValidation()
 const { downloadMarkdown } = useMarkdownGenerator()
 const toast = useToast()
 
-// Create stepper items from wizard steps
 const stepperItems = computed(() =>
   visibleSteps.value.map(step => ({
     title: step.titleAr,
@@ -13,10 +12,17 @@ const stepperItems = computed(() =>
   }))
 )
 
-// Validation errors for current step
 const validationErrors = ref([])
+const showDeleteModal = ref(false)
+const isDeleting = ref(false)
 
-// Handle next step with validation
+const isHardDelete = computed(() => state.value.projectStatus === 'planning')
+
+const projectUrl = computed(() => {
+  if (!currentProjectId.value || !import.meta.client) return ''
+  return `${window.location.origin}/wizard/${currentProjectId.value}`
+})
+
 async function handleNext() {
   const result = validateStep(currentStep.value)
 
@@ -32,16 +38,19 @@ async function handleNext() {
   }
 
   validationErrors.value = []
+
+  if (currentStep.value === visibleSteps.value.length - 2 && state.value.projectStatus === 'planning') {
+    updateField('projectStatus', 'planned')
+  }
+
   nextStep()
 }
 
-// Handle previous step
 function handlePrev() {
   validationErrors.value = []
   prevStep()
 }
 
-// Handle download
 function handleDownload() {
   try {
     downloadMarkdown(state.value)
@@ -51,7 +60,7 @@ function handleDownload() {
       color: 'success',
       icon: 'i-lucide-check-circle'
     })
-  } catch (e) {
+  } catch {
     toast.add({
       title: 'خطأ',
       description: 'حدث خطأ أثناء التحميل',
@@ -61,23 +70,55 @@ function handleDownload() {
   }
 }
 
-// Handle save to cloud
-async function handleSaveToCloud() {
-  const result = await saveToCloud()
-
-  if (result.success) {
+async function copyProjectUrl() {
+  if (!projectUrl.value) return
+  try {
+    await navigator.clipboard.writeText(projectUrl.value)
     toast.add({
-      title: 'تم الحفظ',
-      description: 'تم حفظ المشروع في السحابة بنجاح',
+      title: 'تم النسخ',
+      description: 'تم نسخ رابط المشروع. يمكنك مشاركته أو فتحه من أي جهاز.',
       color: 'success',
-      icon: 'i-lucide-cloud-check'
+      icon: 'i-lucide-check'
     })
+  } catch {
+    toast.add({
+      title: 'خطأ',
+      description: 'فشل في نسخ الرابط',
+      color: 'error',
+      icon: 'i-lucide-x'
+    })
+  }
+}
+
+async function handleDeleteProject() {
+  if (!currentProjectId.value) return
+
+  isDeleting.value = true
+  showDeleteModal.value = false
+
+  const isHard = state.value.projectStatus === 'planning'
+  let success = false
+
+  if (isHard) {
+    success = await deleteProject(currentProjectId.value)
+  } else {
+    success = await softDeleteProject(currentProjectId.value)
+  }
+
+  isDeleting.value = false
+
+  if (success) {
+    toast.add({
+      title: isHard ? 'تم الحذف' : 'تم الأرشفة',
+      description: isHard ? 'تم حذف المشروع نهائياً' : 'تم نقل المشروع للأرشيف',
+      color: 'success'
+    })
+    navigateTo('/projects')
   } else {
     toast.add({
       title: 'خطأ',
-      description: result.error || 'فشل في حفظ المشروع',
-      color: 'error',
-      icon: 'i-lucide-cloud-off'
+      description: 'فشل في حذف المشروع',
+      color: 'error'
     })
   }
 }
@@ -86,13 +127,31 @@ async function handleSaveToCloud() {
 <template>
   <div class="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
     <!-- Header -->
-    <div class="text-center">
+    <div class="text-center space-y-3">
       <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
         معالج مواصفات المشروع
       </h1>
-      <p class="mt-2 text-gray-600 dark:text-gray-400">
+      <p class="text-gray-600 dark:text-gray-400">
         املأ البيانات لإنشاء ملف مواصفات جاهز للاستخدام مع Claude
       </p>
+      <div v-if="currentProjectId" class="flex items-center justify-center gap-2">
+        <UButton
+          size="xs"
+          variant="ghost"
+          icon="i-lucide-link"
+          label="نسخ رابط المشروع"
+          @click="copyProjectUrl"
+        />
+        <UButton
+          size="xs"
+          variant="ghost"
+          color="error"
+          :icon="isDeleting ? 'i-lucide-loader-2' : 'i-lucide-trash-2'"
+          label="حذف المشروع"
+          :disabled="isDeleting"
+          @click="showDeleteModal = true"
+        />
+      </div>
     </div>
 
     <!-- Stepper -->
@@ -132,16 +191,19 @@ async function handleSaveToCloud() {
         </template>
       </UAlert>
 
-      <!-- Dynamic Step Content -->
-      <WizardStepsStepQuickReference v-if="currentStep === 0" />
-      <WizardStepsStepUserStories v-else-if="currentStep === 1" />
-      <WizardStepsStepTechnical v-else-if="currentStep === 2" />
-      <WizardStepsStepDatabase v-else-if="currentStep === 3" />
-      <WizardStepsStepApi v-else-if="currentStep === 4" />
-      <WizardStepsStepFrontend v-else-if="currentStep === 5" />
-      <WizardStepsStepFeatures v-else-if="currentStep === 6" />
-      <WizardStepsStepDependencies v-else-if="currentStep === 7" />
-      <WizardStepsStepGuidelines v-else-if="currentStep === 8" />
+      <!-- Dynamic Step Content (based on step ID) -->
+      <WizardStepsStepQuickReference v-if="visibleSteps[currentStep]?.id === 0" />
+      <WizardStepsStepUserStories v-else-if="visibleSteps[currentStep]?.id === 1" />
+      <WizardStepsStepPermissions v-else-if="visibleSteps[currentStep]?.id === 2" />
+      <WizardStepsStepTechnical v-else-if="visibleSteps[currentStep]?.id === 3" />
+      <WizardStepsStepSummary v-else-if="visibleSteps[currentStep]?.id === 4" />
+      <WizardStepsStepDatabase v-else-if="visibleSteps[currentStep]?.id === 5" />
+      <WizardStepsStepSummaryWithDB v-else-if="visibleSteps[currentStep]?.id === 6" />
+      <WizardStepsStepApi v-else-if="visibleSteps[currentStep]?.id === 7" />
+      <WizardStepsStepFrontend v-else-if="visibleSteps[currentStep]?.id === 8" />
+      <WizardStepsStepFeatures v-else-if="visibleSteps[currentStep]?.id === 9" />
+      <WizardStepsStepDependencies v-else-if="visibleSteps[currentStep]?.id === 10" />
+      <WizardStepsStepGuidelines v-else-if="visibleSteps[currentStep]?.id === 11" />
 
       <!-- Navigation Footer -->
       <template #footer>
@@ -156,14 +218,6 @@ async function handleSaveToCloud() {
           <div v-else />
 
           <div class="flex gap-2">
-            <UButton
-              v-if="isLastStep"
-              variant="outline"
-              icon="i-lucide-cloud-upload"
-              label="حفظ في السحابة"
-              :loading="isSaving"
-              @click="handleSaveToCloud"
-            />
             <UButton
               v-if="isLastStep"
               color="success"
@@ -201,7 +255,7 @@ async function handleSaveToCloud() {
           class="flex items-center gap-1"
         >
           <UIcon name="i-lucide-loader-2" class="w-3 h-3 animate-spin" />
-          <span>جاري الحفظ...</span>
+          <span>جارٍ الحفظ في قاعدة البيانات...</span>
         </UBadge>
         <UBadge
           v-else-if="lastSaved"
@@ -209,10 +263,54 @@ async function handleSaveToCloud() {
           variant="subtle"
           class="flex items-center gap-1"
         >
-          <UIcon name="i-lucide-check" class="w-3 h-3" />
-          <span>تم الحفظ</span>
+          <UIcon name="i-lucide-cloud-check" class="w-3 h-3" />
+          <span>تم الحفظ تلقائياً</span>
         </UBadge>
       </div>
     </Transition>
+
+    <!-- Delete Confirmation Modal -->
+    <UModal
+      :open="showDeleteModal"
+      title="تأكيد الحذف"
+      :close="false"
+      @update:open="showDeleteModal = $event"
+    >
+      <template #content>
+        <div class="p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+              <UIcon name="i-lucide-alert-triangle" class="w-5 h-5 text-red-500" />
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">تأكيد الحذف</h3>
+          </div>
+
+          <p class="text-gray-600 dark:text-gray-400">
+            هل أنت متأكد من {{ isHardDelete ? 'حذف' : 'أرشفة' }} المشروع
+            <strong class="text-gray-900 dark:text-white">{{ state.projectName || 'بدون اسم' }}</strong>؟
+          </p>
+          <p class="mt-2 text-sm" :class="isHardDelete ? 'text-red-500' : 'text-yellow-600'">
+            {{ isHardDelete
+              ? 'سيتم حذف المشروع نهائياً ولا يمكن استرجاعه.'
+              : 'سيتم نقل المشروع للأرشيف ويمكن استرجاعه لاحقاً.'
+            }}
+          </p>
+
+          <div class="flex justify-end gap-3 mt-6">
+            <UButton
+              variant="ghost"
+              label="إلغاء"
+              @click="showDeleteModal = false"
+            />
+            <UButton
+              :color="isHardDelete ? 'error' : 'warning'"
+              :icon="isHardDelete ? 'i-lucide-trash-2' : 'i-lucide-archive'"
+              :label="isHardDelete ? 'حذف نهائي' : 'أرشفة المشروع'"
+              @click="handleDeleteProject"
+            />
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>

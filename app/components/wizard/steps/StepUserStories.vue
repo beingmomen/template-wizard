@@ -3,17 +3,36 @@ const { state, updateField } = useWizardState()
 
 const emptyUserType = {
   userType: '',
-  stories: [{ story: '' }]
+  stories: [{ story: '' }],
+  roleId: ''
 }
 
 const emptyStory = {
   story: ''
 }
 
+const hasRoles = computed(() =>
+  state.value.permissionsConfig?.enabled && state.value.roles?.length > 0
+)
+
+const availableRoles = computed(() =>
+  (state.value.roles || []).map(r => ({
+    label: r.name || r.id,
+    value: r.id
+  }))
+)
+
 // Update user type name
 function updateUserTypeName(index, name) {
   const newUserTypes = [...state.value.userTypes]
   newUserTypes[index].userType = name
+  updateField('userTypes', newUserTypes)
+}
+
+// Update user type role
+function updateUserTypeRole(index, roleId) {
+  const newUserTypes = [...state.value.userTypes]
+  newUserTypes[index].roleId = roleId
   updateField('userTypes', newUserTypes)
 }
 
@@ -66,6 +85,20 @@ function removeStory(userIndex, storyIndex) {
               placeholder="مثال: صاحب المحل، المدير، الموظف"
               @update:model-value="updateUserTypeName(index, $event)"
             />
+          </UFormField>
+
+          <!-- Role Selection (when permissions enabled) -->
+          <UFormField v-if="hasRoles" label="الدور المرتبط">
+            <USelectMenu
+              :model-value="item.roleId"
+              :items="availableRoles"
+              placeholder="اختر الدور"
+              value-key="value"
+              @update:model-value="updateUserTypeRole(index, $event)"
+            />
+            <template #hint>
+              <span class="text-xs text-gray-500">ربط نوع المستخدم بدور من نظام الصلاحيات</span>
+            </template>
           </UFormField>
 
           <!-- Stories -->

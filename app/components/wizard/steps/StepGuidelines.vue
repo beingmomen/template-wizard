@@ -66,7 +66,8 @@ function resetToDefaults() {
           <UTextarea
             :model-value="warning.warning"
             placeholder="اكتب التحذير أو التأكيد هنا..."
-            :rows="2"
+            :rows="4"
+            autoresize
             @update:model-value="updateWarning(index, $event)"
           />
         </UFormField>

@@ -1,6 +1,7 @@
 // Export all Zod schemas
 export * from './quickReference.schema'
 export * from './userStories.schema'
+export * from './permissions.schema'
 export * from './technical.schema'
 export * from './database.schema'
 export * from './api.schema'

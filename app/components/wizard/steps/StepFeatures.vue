@@ -147,7 +147,8 @@ function removeTask(phaseIndex, taskIndex) {
         <UTextarea
           v-model="state.wireframes"
           placeholder="اكتب وصف نصي للشاشات الرئيسية أو استخدم ASCII art"
-          :rows="6"
+          :rows="4"
+          autoresize
         />
       </UFormField>
 

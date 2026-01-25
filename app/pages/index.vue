@@ -1,10 +1,25 @@
 <script setup>
-const { resetState } = useWizardState()
+const { createProject, currentProjectId } = useWizardState()
+const isCreating = ref(false)
 
-// Reset state when starting fresh
-function handleStartFresh() {
-  resetState()
-  navigateTo('/wizard')
+async function handleStartFresh() {
+  isCreating.value = true
+  try {
+    const projectId = await createProject()
+    if (projectId) {
+      navigateTo(`/wizard/${projectId}`)
+    }
+  } finally {
+    isCreating.value = false
+  }
+}
+
+function handleContinue() {
+  if (currentProjectId.value) {
+    navigateTo(`/wizard/${currentProjectId.value}`)
+  } else {
+    navigateTo('/wizard')
+  }
 }
 </script>
 
@@ -110,17 +125,20 @@ function handleStartFresh() {
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
         <UButton
           size="lg"
-          icon="i-lucide-play"
-          label="ابدأ الآن"
+          :icon="isCreating ? 'i-lucide-loader-2' : 'i-lucide-play'"
+          :class="{ 'animate-spin': isCreating }"
+          :label="isCreating ? 'جارٍ الإنشاء...' : 'مشروع جديد'"
+          :disabled="isCreating"
           @click="handleStartFresh"
         />
         <UButton
-          to="/wizard"
+          v-if="currentProjectId"
           size="lg"
           variant="outline"
           icon="i-lucide-arrow-left"
           trailing
-          label="متابعة مشروع سابق"
+          label="متابعة المشروع الحالي"
+          @click="handleContinue"
         />
         <UButton
           to="/projects"
@@ -137,7 +155,7 @@ function handleStartFresh() {
         color="primary"
         variant="subtle"
         title="ملاحظة"
-        description="يتم حفظ بياناتك تلقائياً في المتصفح. كما يمكنك حفظ مشاريعك في السحابة للوصول إليها لاحقاً."
+        description="يتم حفظ بياناتك تلقائياً في قاعدة البيانات. يمكنك متابعة العمل من أي جهاز باستخدام رابط المشروع."
       />
     </div>
   </UContainer>

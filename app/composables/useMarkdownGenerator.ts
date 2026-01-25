@@ -1,22 +1,47 @@
-import type { WizardState } from '~/types/wizard.types'
+import type { WizardState, ProjectType } from '~/types/wizard.types'
+
+const projectTypeLabels: Record<ProjectType, string> = {
+  'fullstack': 'Fullstack Application',
+  'frontend-only': 'Frontend Only',
+  'backend-only': 'Backend/API Only',
+  'chrome-extension': 'Chrome Extension',
+  'cli-tool': 'CLI Tool',
+  'library': 'Library/Package',
+  'integration': 'Integration Service'
+}
 
 export function useMarkdownGenerator() {
+  const needsFrontend = (projectType: ProjectType) =>
+    ['fullstack', 'frontend-only', 'chrome-extension'].includes(projectType)
+
+  const needsBackend = (projectType: ProjectType) =>
+    ['fullstack', 'backend-only'].includes(projectType)
+
+  const needsDatabase = (projectType: ProjectType) =>
+    ['fullstack', 'backend-only'].includes(projectType)
+
   // Generate Quick Reference section
   const generateQuickReference = (state: WizardState): string => {
-    return `# Project Specification: ${state.projectName}
+    const projectType = state.projectType || 'fullstack'
+    let content = `# Project Specification: ${state.projectName}
 
 ## Quick Reference | مرجع سريع
 
 | الحقل | القيمة |
 |-------|--------|
+| نوع المشروع | ${projectTypeLabels[projectType]} |
 | حجم المشروع | ${state.projectSize === 'small' ? 'صغير' : state.projectSize === 'medium' ? 'متوسط' : 'كبير'} |
 | الاسم التقني | ${state.projectNameTechnical} |
-| البنية | ${state.architecture} |
-| Frontend | ${state.techStack.frontend} |
-| Backend | ${state.techStack.backend} |
-| Database | ${state.techStack.database} |
-| Auth | ${state.techStack.auth} |
-${state.multiTenancy.enabled ? `| Multi-tenancy | ${state.multiTenancy.model} (${state.multiTenancy.isolationLevel}) |` : ''}`
+| البنية | ${state.architecture} |`
+
+    if (state.techStack.frontend) content += `\n| Frontend | ${state.techStack.frontend} |`
+    if (state.techStack.backend) content += `\n| Backend | ${state.techStack.backend} |`
+    if (state.techStack.database) content += `\n| Database | ${state.techStack.database} |`
+    if (state.techStack.auth) content += `\n| Auth | ${state.techStack.auth} |`
+    if (state.techStack.runtime) content += `\n| Runtime | ${state.techStack.runtime} |`
+    if (state.multiTenancy?.enabled) content += `\n| Multi-tenancy | ${state.multiTenancy.model} (${state.multiTenancy.isolationLevel}) |`
+
+    return content
   }
 
   // Generate Project Overview
@@ -52,8 +77,12 @@ ${state.targetUsers}
   const generateUserStories = (state: WizardState): string => {
     let content = `## 2. User Stories | قصص المستخدم\n\n`
 
+    const roles = state.roles || []
+
     state.userTypes.forEach((ut, i) => {
-      content += `### 2.${i + 1} ${ut.userType}\n\`\`\`\n`
+      const linkedRole = ut.roleId ? roles.find(r => r.id === ut.roleId) : null
+      const roleLabel = linkedRole ? ` (الدور: ${linkedRole.name})` : ''
+      content += `### 2.${i + 1} ${ut.userType}${roleLabel}\n\`\`\`\n`
       ut.stories.forEach((s) => {
         content += `- ${s.story}\n`
       })
@@ -63,31 +92,102 @@ ${state.targetUsers}
     return content
   }
 
+  // Generate Permissions & Roles
+  const generatePermissionsSection = (state: WizardState): string => {
+    if (!state.permissionsConfig?.enabled) return ''
+
+    let content = `## 3. Permissions & Roles | الصلاحيات والأدوار
+
+### 3.1 Permissions System Configuration
+\`\`\`yaml
+Type: ${state.permissionsConfig.type}
+${state.permissionsConfig.superAdminRole ? `Super Admin Role: ${state.permissionsConfig.superAdminRole}` : ''}
+${state.permissionsConfig.defaultRole ? `Default Role: ${state.permissionsConfig.defaultRole}` : ''}
+\`\`\`
+`
+
+    if (state.permissions?.length > 0) {
+      content += `
+### 3.2 Permissions List
+\`\`\`yaml\n`
+      state.permissions.forEach((p) => {
+        content += `${p.id}:
+  name: ${p.name}
+  resource: ${p.resource}
+  action: ${p.action}
+${p.description ? `  description: ${p.description}` : ''}
+`
+      })
+      content += `\`\`\`
+`
+    }
+
+    if (state.roles?.length > 0) {
+      content += `
+### 3.3 Roles
+\`\`\`yaml\n`
+      state.roles.forEach((r) => {
+        content += `${r.id}:
+  name: ${r.name}
+${r.description ? `  description: ${r.description}` : ''}
+  permissions: [${r.permissions.join(', ')}]
+${r.inheritsFrom ? `  inherits_from: ${r.inheritsFrom}` : ''}
+`
+      })
+      content += `\`\`\``
+    }
+
+    return content
+  }
+
+  // Generate External Services
+  const generateExternalServices = (state: WizardState): string => {
+    if (!state.externalServices?.length) return ''
+
+    let content = `## External Services | الخدمات الخارجية\n\n`
+
+    state.externalServices.forEach((service, i) => {
+      content += `### ${i + 1}. ${service.name} (${service.type})
+\`\`\`yaml
+${service.apiUrl ? `API URL: ${service.apiUrl}` : ''}
+Description: ${service.description}
+${service.envVars?.length > 0 ? `Environment Variables: [${service.envVars.join(', ')}]` : ''}
+\`\`\`
+`
+    })
+
+    return content
+  }
+
   // Generate Technical Requirements
   const generateTechnicalRequirements = (state: WizardState): string => {
-    let content = `## 3. Technical Requirements | المتطلبات التقنية
+    let techStackLines = []
+    if (state.techStack.frontend) techStackLines.push(`Frontend: ${state.techStack.frontend}`)
+    if (state.techStack.backend) techStackLines.push(`Backend: ${state.techStack.backend}`)
+    if (state.techStack.database) techStackLines.push(`Database: ${state.techStack.database}`)
+    if (state.techStack.auth) techStackLines.push(`Authentication: ${state.techStack.auth}`)
+    if (state.techStack.runtime) techStackLines.push(`Runtime: ${state.techStack.runtime}`)
+    if (state.techStack.orm) techStackLines.push(`ORM: ${state.techStack.orm}`)
+    if (state.techStack.fileUpload) techStackLines.push(`File Upload: ${state.techStack.fileUpload}`)
+    if (state.techStack.pdfGeneration) techStackLines.push(`PDF Generation: ${state.techStack.pdfGeneration}`)
+    if (state.techStack.email) techStackLines.push(`Email: ${state.techStack.email}`)
 
-### 3.1 Tech Stack
+    let content = `## Technical Requirements | المتطلبات التقنية
+
+### Tech Stack
 \`\`\`yaml
-Frontend: ${state.techStack.frontend}
-Backend: ${state.techStack.backend}
-Database: ${state.techStack.database}
-Authentication: ${state.techStack.auth}
-${state.techStack.orm ? `ORM: ${state.techStack.orm}` : ''}
-${state.techStack.fileUpload ? `File Upload: ${state.techStack.fileUpload}` : ''}
-${state.techStack.pdfGeneration ? `PDF Generation: ${state.techStack.pdfGeneration}` : ''}
-${state.techStack.email ? `Email: ${state.techStack.email}` : ''}
+${techStackLines.join('\n')}
 \`\`\`
 
-### 3.2 Architecture
+### Architecture
 \`\`\`
 البنية: ${state.architecture === 'monolith' ? 'Monolith - تطبيق واحد' : state.architecture === 'monorepo' ? 'Monorepo - عدة تطبيقات' : 'Microservices - خدمات منفصلة'}
 \`\`\``
 
-    if (state.multiTenancy.enabled) {
+    if (state.multiTenancy?.enabled) {
       content += `
 
-### 3.3 Multi-tenancy
+### Multi-tenancy
 \`\`\`
 Model: ${state.multiTenancy.model}
 Isolation: ${state.multiTenancy.isolationLevel}
@@ -143,40 +243,80 @@ ${state.relationships}
 
   // Generate API Design
   const generateApiDesign = (state: WizardState): string => {
-    let content = `## 5. API Design | تصميم الـ API
+    const hasApiGroups = state.apiGroups?.length > 0
+    const hasLegacyEndpoints = state.endpoints?.length > 0
 
-### 5.1 API Style: ${state.apiStyle}
+    if (!hasApiGroups && !hasLegacyEndpoints) return ''
+
+    let content = `## API Design | تصميم الـ API
+
+### API Style: ${state.apiStyle}
 ${state.routePrefix ? `Base Prefix: ${state.routePrefix}` : ''}
-
-### 5.2 Endpoints
-\`\`\`yaml\n`
-
-    state.endpoints.forEach((ep) => {
-      content += `${ep.method} ${ep.path}:
-  description: ${ep.description}
-  auth: ${ep.authRequired ? 'required' : 'none'}
-${ep.body ? `  body: ${ep.body}` : ''}
-${ep.response ? `  response: ${ep.response}` : ''}
-
 `
-    })
 
-    content += `\`\`\``
+    const generateEndpointYaml = (ep: typeof state.endpoints[0]) => {
+      const permissions = (ep.requiredPermissions?.length ?? 0) > 0
+        ? `\n  permissions: [${ep.requiredPermissions?.join(', ')}]`
+        : ''
+      const queryParams = ep.queryParameters?.length > 0
+        ? `\n  queryParameters:\n${ep.queryParameters.map(p =>
+            `    - ${p.name}: ${p.type}${p.required ? ' (required)' : ''}${p.description ? ` # ${p.description}` : ''}`
+          ).join('\n')}`
+        : ''
+      return `${ep.method} ${ep.path}:
+  description: ${ep.description}
+  auth: ${ep.authRequired ? 'required' : 'none'}${permissions}${queryParams}
+${ep.body ? `  body: ${ep.body}` : ''}
+${ep.response ? `  response: ${ep.response}` : ''}`
+    }
+
+    if (hasApiGroups) {
+      state.apiGroups.forEach((group) => {
+        content += `
+### ${group.name}
+${group.description ? `> ${group.description}` : ''}
+\`\`\`yaml\n`
+        group.endpoints?.forEach((ep) => {
+          content += generateEndpointYaml(ep) + '\n\n'
+        })
+        content += `\`\`\`
+`
+      })
+    }
+
+    if (hasLegacyEndpoints) {
+      content += `
+### Endpoints
+\`\`\`yaml\n`
+      state.endpoints.forEach((ep) => {
+        content += generateEndpointYaml(ep) + '\n\n'
+      })
+      content += `\`\`\``
+    }
+
     return content
   }
 
   // Generate Frontend Pages
   const generateFrontendPages = (state: WizardState): string => {
-    let content = `## 6. Frontend Pages | صفحات الواجهة
+    if (!state.pages?.length && !state.sharedComponents) return ''
 
-### 6.1 Pages List
+    let content = `## Frontend Pages | صفحات الواجهة
+
+### Pages List
 \`\`\`yaml\n`
 
-    state.pages.forEach((page) => {
+    state.pages?.forEach((page) => {
+      const permissions = (page.requiredPermissions?.length ?? 0) > 0
+        ? `\n  permissions: [${page.requiredPermissions?.join(', ')}]`
+        : ''
+      const roles = (page.requiredRoles?.length ?? 0) > 0
+        ? `\n  roles: [${page.requiredRoles?.join(', ')}]`
+        : ''
       content += `${page.path}:
   name: ${page.name}
   description: ${page.description}
-  auth: ${page.auth ? 'required' : 'public'}
+  auth: ${page.auth ? 'required' : 'public'}${permissions}${roles}
 
 `
     })
@@ -186,7 +326,7 @@ ${ep.response ? `  response: ${ep.response}` : ''}
     if (state.sharedComponents) {
       content += `
 
-### 6.2 Shared Components
+### Shared Components
 \`\`\`
 ${state.sharedComponents}
 \`\`\``
@@ -268,18 +408,29 @@ ${ec.handling}
 
   // Generate Dependencies
   const generateDependencies = (state: WizardState): string => {
-    return `## 11. Dependencies | المتطلبات
+    const hasBackend = state.backendDependencies?.length > 0
+    const hasFrontend = state.frontendDependencies?.length > 0
 
-### 11.1 Backend Dependencies
+    if (!hasBackend && !hasFrontend) return ''
+
+    let content = `## Dependencies | المتطلبات\n`
+
+    if (hasBackend) {
+      content += `
+### Backend Dependencies
 \`\`\`json
 {
   "dependencies": {
 ${state.backendDependencies.map(d => `    "${d}": "latest"`).join(',\n')}
   }
 }
-\`\`\`
+\`\`\``
+    }
 
-### 11.2 Frontend Dependencies
+    if (hasFrontend) {
+      content += `
+
+### Frontend Dependencies
 \`\`\`json
 {
   "dependencies": {
@@ -287,6 +438,9 @@ ${state.frontendDependencies.map(d => `    "${d}": "latest"`).join(',\n')}
   }
 }
 \`\`\``
+    }
+
+    return content
   }
 
   // Generate Environment Variables
@@ -339,15 +493,36 @@ ${state.developmentWarnings.map((w, i) => `${i + 1}. ${w.warning}`).join('\n')}
   // Generate full markdown
   const generateMarkdown = (state: WizardState): string => {
     const sections: string[] = []
+    const projectType = state.projectType || 'fullstack'
 
     // Basic sections
     sections.push(generateQuickReference(state))
     sections.push(generateProjectOverview(state))
     sections.push(generateUserStories(state))
+
+    // Permissions section (if enabled)
+    const permissions = generatePermissionsSection(state)
+    if (permissions) sections.push(permissions)
+
     sections.push(generateTechnicalRequirements(state))
-    sections.push(generateDatabaseDesign(state))
-    sections.push(generateApiDesign(state))
-    sections.push(generateFrontendPages(state))
+
+    // External services section
+    const externalServices = generateExternalServices(state)
+    if (externalServices) sections.push(externalServices)
+
+    // Database section (only if project needs database)
+    if (needsDatabase(projectType) && state.tables?.length > 0) {
+      sections.push(generateDatabaseDesign(state))
+    }
+
+    // API section (only if project needs backend)
+    const apiSection = generateApiDesign(state)
+    if (apiSection) sections.push(apiSection)
+
+    // Frontend section (only if project needs frontend)
+    const frontendSection = generateFrontendPages(state)
+    if (frontendSection) sections.push(frontendSection)
+
     sections.push(generateFeaturesList(state))
 
     // Extended sections for medium/large
@@ -362,11 +537,13 @@ ${state.developmentWarnings.map((w, i) => `${i + 1}. ${w.warning}`).join('\n')}
       if (phases) sections.push(phases)
     }
 
-    sections.push(generateDependencies(state))
+    const dependencies = generateDependencies(state)
+    if (dependencies) sections.push(dependencies)
+
     sections.push(generateEnvironmentVariables(state))
     sections.push(generateDevelopmentGuidelines(state))
 
-    return sections.join('\n\n---\n\n')
+    return sections.filter(s => s.trim()).join('\n\n---\n\n')
   }
 
   // Download markdown file
