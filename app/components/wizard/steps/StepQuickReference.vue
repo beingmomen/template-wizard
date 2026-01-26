@@ -135,11 +135,12 @@ watch(() => state.value.projectName, (name) => {
         />
       </UFormField>
 
-      <UFormField label="المستوى التقني" name="targetUserLevel">
+      <UFormField label="المستوى التقني للمستخدم" name="targetUserLevel">
         <USelect
           v-model="state.targetUserLevel"
           :items="levelOptions"
         />
+        <p class="text-xs text-gray-500 mt-1">مستوى الخبرة التقنية للمستخدم النهائي (يؤثر على تعقيد الواجهة)</p>
       </UFormField>
 
       <UFormField label="اللغة الأساسية" name="primaryLanguage">

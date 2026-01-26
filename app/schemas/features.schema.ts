@@ -19,13 +19,13 @@ export const featuresSchemaSmall = z.object({
   implementationPhases: z.array(phaseSchema).optional()
 })
 
-// Schema for medium/large projects (phases required)
+// Schema for medium/large projects (phases optional)
 export const featuresSchemaExtended = z.object({
   mvpFeatures: z.array(z.string().min(5)).min(1, 'أضف ميزة واحدة على الأقل'),
   futureFeatures: z.array(z.string()).optional(),
   wireframes: z.string().optional(),
   edgeCases: z.array(edgeCaseSchema).optional(),
-  implementationPhases: z.array(phaseSchema).min(1, 'أضف مرحلة واحدة على الأقل')
+  implementationPhases: z.array(phaseSchema).optional()
 })
 
 export type FeaturesData = z.infer<typeof featuresSchemaSmall>

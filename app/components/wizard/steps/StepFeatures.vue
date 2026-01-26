@@ -184,10 +184,31 @@ function removeTask(phaseIndex, taskIndex) {
 
       <USeparator />
 
+      <!-- Implementation Phases Description -->
+      <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+        <div class="flex items-start gap-3">
+          <UIcon name="i-lucide-info" class="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
+          <div class="text-sm">
+            <p class="font-medium text-blue-800 dark:text-blue-200 mb-2">
+              مراحل التنفيذ (اختياري)
+            </p>
+            <p class="text-blue-700 dark:text-blue-300 mb-2">
+              قسّم العمل إلى مراحل متتابعة لتنظيم تطوير المشروع. يساعدك هذا في تحديد الأولويات والتواصل مع AI.
+            </p>
+            <p class="text-blue-600 dark:text-blue-400 text-xs">
+              <strong>مثال:</strong><br>
+              • المرحلة 1: الأساسيات → إعداد المشروع، قاعدة البيانات، المصادقة<br>
+              • المرحلة 2: الوظائف → الصفحات الرئيسية، العمليات الأساسية<br>
+              • المرحلة 3: التحسينات → البحث، التقارير، الإشعارات
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- Implementation Phases -->
       <FormDynamicArrayField
         v-model="state.implementationPhases"
-        label="مراحل التنفيذ"
+        label="مراحل التنفيذ (اختياري)"
         add-label="إضافة مرحلة"
         :empty-item="emptyPhase"
         :min-items="0"

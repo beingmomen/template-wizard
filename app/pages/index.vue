@@ -147,6 +147,13 @@ function handleContinue() {
           icon="i-lucide-folder-open"
           label="مشاريعي المحفوظة"
         />
+        <UButton
+          to="/methodology"
+          size="lg"
+          variant="ghost"
+          icon="i-lucide-book-open"
+          label="منهجية التطوير"
+        />
       </div>
 
       <!-- Info -->

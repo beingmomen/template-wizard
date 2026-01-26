@@ -5,10 +5,10 @@ const { downloadMarkdown } = useMarkdownGenerator()
 const toast = useToast()
 
 const stepperItems = computed(() =>
-  visibleSteps.value.map(step => ({
+  visibleSteps.value.map((step, index) => ({
     title: step.titleAr,
     icon: step.icon,
-    value: String(step.id)
+    value: String(index)
   }))
 )
 

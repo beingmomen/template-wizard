@@ -26,7 +26,7 @@ const needsDatabase = computed(() =>
 )
 
 const needsAuth = computed(() =>
-  ['fullstack', 'backend-only', 'frontend-only'].includes(state.value.projectType)
+  ['fullstack', 'backend-only'].includes(state.value.projectType)
 )
 
 const needsRuntime = computed(() =>
