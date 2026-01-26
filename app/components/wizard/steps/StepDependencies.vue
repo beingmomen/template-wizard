@@ -1,5 +1,5 @@
 <script setup>
-import { commonBackendDeps, commonFrontendDeps } from '~/schemas/dependencies.schema'
+import { commonBackendDeps, commonFrontendDeps, packageManagerOptions } from '~/schemas/dependencies.schema'
 
 const { state, updateField } = useWizardState()
 
@@ -47,6 +47,24 @@ function updateEnvVar(index, field, value) {
 
 <template>
   <div class="space-y-6">
+    <!-- Package Manager -->
+    <div class="space-y-3">
+      <UFormField label="مدير الحزم (Package Manager)" required>
+        <USelect
+          :model-value="state.packageManager"
+          :items="packageManagerOptions"
+          value-key="value"
+          placeholder="اختر مدير الحزم"
+          @update:model-value="updateField('packageManager', $event)"
+        />
+      </UFormField>
+      <p class="text-sm text-neutral-500">
+        سيتم استخدام هذا في أوامر التثبيت المُولّدة
+      </p>
+    </div>
+
+    <USeparator />
+
     <!-- Backend Dependencies -->
     <div class="space-y-3">
       <div class="flex items-center justify-between">

@@ -7,7 +7,15 @@ const envVariableSchema = z.object({
   example: z.string().min(1, 'المثال مطلوب')
 })
 
+export const packageManagerOptions = [
+  { label: 'pnpm (Recommended)', value: 'pnpm' },
+  { label: 'npm', value: 'npm' },
+  { label: 'yarn', value: 'yarn' },
+  { label: 'bun', value: 'bun' }
+]
+
 export const dependenciesSchema = z.object({
+  packageManager: z.enum(['pnpm', 'npm', 'yarn', 'bun']).optional().default('pnpm'),
   backendDependencies: z.array(z.string().min(1)).min(1, 'أضف مكتبة واحدة على الأقل'),
   frontendDependencies: z.array(z.string().min(1)).min(1, 'أضف مكتبة واحدة على الأقل'),
   environmentVariables: z.array(envVariableSchema).min(1, 'أضف متغير واحد على الأقل'),

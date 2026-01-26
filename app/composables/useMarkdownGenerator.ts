@@ -39,6 +39,7 @@ export function useMarkdownGenerator() {
     if (state.techStack.database) content += `\n| Database | ${state.techStack.database} |`
     if (state.techStack.auth) content += `\n| Auth | ${state.techStack.auth} |`
     if (state.techStack.runtime) content += `\n| Runtime | ${state.techStack.runtime} |`
+    if (state.packageManager) content += `\n| Package Manager | ${state.packageManager} |`
     if (state.multiTenancy?.enabled) content += `\n| Multi-tenancy | ${state.multiTenancy.model} (${state.multiTenancy.isolationLevel}) |`
 
     return content
@@ -413,11 +414,22 @@ ${ec.handling}
 
     if (!hasBackend && !hasFrontend) return ''
 
-    let content = `## Dependencies | المتطلبات\n`
+    const pm = state.packageManager || 'pnpm'
+    const installCmd = pm === 'npm' ? 'npm install' :
+                       pm === 'yarn' ? 'yarn add' :
+                       pm === 'bun' ? 'bun add' : 'pnpm add'
+
+    let content = `## Dependencies | المتطلبات
+
+### Package Manager: ${pm}
+`
 
     if (hasBackend) {
       content += `
 ### Backend Dependencies
+\`\`\`bash
+${installCmd} ${state.backendDependencies.join(' ')}
+\`\`\`
 \`\`\`json
 {
   "dependencies": {
@@ -431,6 +443,9 @@ ${state.backendDependencies.map(d => `    "${d}": "latest"`).join(',\n')}
       content += `
 
 ### Frontend Dependencies
+\`\`\`bash
+${installCmd} ${state.frontendDependencies.join(' ')}
+\`\`\`
 \`\`\`json
 {
   "dependencies": {

@@ -23,6 +23,7 @@ export type ProjectStatus = 'planning' | 'planned' | 'completed'
 export type PermissionAction = 'create' | 'read' | 'update' | 'delete' | 'manage' | 'custom'
 export type PermissionSystemType = 'role-based' | 'action-based' | 'resource-based' | 'custom'
 export type ExternalServiceType = 'AI' | 'Payment' | 'Auth' | 'Storage' | 'Email' | 'Analytics' | 'Other'
+export type PackageManager = 'pnpm' | 'npm' | 'yarn' | 'bun'
 
 export interface Permission {
   id: string
@@ -217,6 +218,7 @@ export interface WizardState {
   implementationPhases: Phase[]
 
   // Step 9: Dependencies & Environment
+  packageManager: PackageManager
   backendDependencies: string[]
   frontendDependencies: string[]
   environmentVariables: EnvVariable[]
@@ -329,6 +331,7 @@ export const initialWizardState: WizardState = {
   implementationPhases: [],
 
   // Step 8
+  packageManager: 'pnpm',
   backendDependencies: ['express', 'mysql2', 'jsonwebtoken', 'bcryptjs', 'zod', 'cors', 'dotenv'],
   frontendDependencies: ['nuxt', '@nuxt/ui', '@sidebase/nuxt-auth', '@pinia/nuxt'],
   environmentVariables: [
