@@ -11,17 +11,7 @@
     "playwright": {
       "type": "stdio",
       "command": "npx",
-      "args": [
-        "@playwright/mcp@latest"
-      ],
-      "env": {}
-    },
-    "tailwindcss-mcp-server": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "tailwindcss-mcp-server"
-      ],
+      "args": ["@playwright/mcp@latest"],
       "env": {}
     }
   }

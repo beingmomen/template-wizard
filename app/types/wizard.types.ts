@@ -25,6 +25,68 @@ export type PermissionSystemType = 'role-based' | 'action-based' | 'resource-bas
 export type ExternalServiceType = 'AI' | 'Payment' | 'Auth' | 'Storage' | 'Email' | 'Analytics' | 'Other'
 export type PackageManager = 'pnpm' | 'npm' | 'yarn' | 'bun'
 
+export type SharedComponentCategory = 'layout' | 'data' | 'feedback' | 'form' | 'navigation' | 'utility'
+
+export interface SharedComponent {
+  name: string
+  description: string
+  category: SharedComponentCategory
+}
+
+export const COMPONENT_CATEGORY_LABELS: Record<SharedComponentCategory, string> = {
+  layout: 'التخطيط',
+  data: 'عرض البيانات',
+  feedback: 'ردود الفعل',
+  form: 'النماذج',
+  navigation: 'التنقل',
+  utility: 'أدوات مساعدة'
+}
+
+export const COMMON_SHARED_COMPONENTS: SharedComponent[] = [
+  { name: 'AppHeader', description: 'الهيدر الرئيسي مع الشعار وقائمة التنقل', category: 'layout' },
+  { name: 'AppSidebar', description: 'القائمة الجانبية للتنقل', category: 'layout' },
+  { name: 'AppFooter', description: 'الفوتر مع روابط سريعة ومعلومات', category: 'layout' },
+  { name: 'AppLogo', description: 'شعار التطبيق', category: 'layout' },
+  { name: 'PageHeader', description: 'عنوان الصفحة مع breadcrumb', category: 'layout' },
+
+  { name: 'DataTable', description: 'جدول بيانات مع فرز وفلترة وترقيم', category: 'data' },
+  { name: 'StatCard', description: 'بطاقة إحصائيات للداشبورد', category: 'data' },
+  { name: 'UserAvatar', description: 'صورة المستخدم مع fallback', category: 'data' },
+  { name: 'StatusBadge', description: 'شارة حالة ملونة', category: 'data' },
+  { name: 'PriceDisplay', description: 'عرض السعر مع العملة', category: 'data' },
+  { name: 'InfoCard', description: 'بطاقة معلومات عامة', category: 'data' },
+  { name: 'Timeline', description: 'عرض الأحداث بشكل زمني', category: 'data' },
+
+  { name: 'ConfirmModal', description: 'نافذة تأكيد للعمليات الخطرة', category: 'feedback' },
+  { name: 'DeleteDialog', description: 'نافذة تأكيد الحذف', category: 'feedback' },
+  { name: 'ToastNotification', description: 'إشعارات منبثقة', category: 'feedback' },
+  { name: 'AlertBanner', description: 'شريط تنبيهات علوي', category: 'feedback' },
+  { name: 'SuccessMessage', description: 'رسالة نجاح العملية', category: 'feedback' },
+
+  { name: 'FormField', description: 'حقل إدخال موحد مع validation', category: 'form' },
+  { name: 'FileUploader', description: 'رفع الملفات مع preview', category: 'form' },
+  { name: 'ImageUploader', description: 'رفع الصور مع crop', category: 'form' },
+  { name: 'SearchInput', description: 'حقل البحث مع debounce', category: 'form' },
+  { name: 'DatePicker', description: 'اختيار التاريخ', category: 'form' },
+  { name: 'RichTextEditor', description: 'محرر نصوص غني', category: 'form' },
+  { name: 'TagInput', description: 'إدخال الوسوم المتعددة', category: 'form' },
+  { name: 'ColorPicker', description: 'اختيار الألوان', category: 'form' },
+
+  { name: 'Breadcrumb', description: 'مسار التنقل', category: 'navigation' },
+  { name: 'Pagination', description: 'أزرار ترقيم الصفحات', category: 'navigation' },
+  { name: 'TabsNav', description: 'تنقل بالتبويبات', category: 'navigation' },
+  { name: 'StepWizard', description: 'خطوات معالج متعددة', category: 'navigation' },
+  { name: 'BackButton', description: 'زر العودة للصفحة السابقة', category: 'navigation' },
+
+  { name: 'LoadingSpinner', description: 'مؤشر التحميل الدائري', category: 'utility' },
+  { name: 'LoadingSkeleton', description: 'هيكل تحميل للبطاقات', category: 'utility' },
+  { name: 'EmptyState', description: 'حالة عدم وجود بيانات', category: 'utility' },
+  { name: 'ErrorState', description: 'حالة الخطأ مع إعادة المحاولة', category: 'utility' },
+  { name: 'NoPermission', description: 'صفحة عدم وجود صلاحية', category: 'utility' },
+  { name: 'NotFound', description: 'صفحة 404', category: 'utility' },
+  { name: 'OfflineIndicator', description: 'مؤشر عدم الاتصال', category: 'utility' }
+]
+
 export interface Permission {
   id: string
   name: string
@@ -76,6 +138,7 @@ export interface TechStack {
   fileUpload?: string
   pdfGeneration?: string
   email?: string
+  uiLibrary?: string
 }
 
 export interface MultiTenancy {
@@ -168,6 +231,84 @@ export interface DevelopmentWarning {
   warning: string
 }
 
+export type MCPServerCategory = 'framework' | 'ui' | 'testing' | 'database' | 'api' | 'other'
+
+export interface MCPServer {
+  id: string
+  name: string
+  type: 'http' | 'stdio'
+  url?: string
+  command?: string
+  args?: string[]
+  description: string
+  descriptionAr: string
+  relatedTechnologies: string[]
+  category: MCPServerCategory
+  checkInstructions: string
+}
+
+export const AVAILABLE_MCP_SERVERS: MCPServer[] = [
+  {
+    id: 'nuxt-remote',
+    name: 'Nuxt MCP Server',
+    type: 'http',
+    url: 'https://nuxt.com/mcp',
+    description: 'Official Nuxt documentation and guidance',
+    descriptionAr: 'وثائق وإرشادات Nuxt الرسمية',
+    relatedTechnologies: ['Nuxt 4', 'Nuxt 3'],
+    category: 'framework',
+    checkInstructions: 'ALWAYS use mcp__nuxt-remote__get-documentation-page and mcp__nuxt-remote__list-modules before creating any Nuxt file'
+  },
+  {
+    id: 'nuxt-ui-remote',
+    name: 'Nuxt UI MCP Server',
+    type: 'http',
+    url: 'https://ui.nuxt.com/mcp',
+    description: 'Nuxt UI component documentation',
+    descriptionAr: 'وثائق مكونات Nuxt UI',
+    relatedTechnologies: ['Nuxt UI'],
+    category: 'ui',
+    checkInstructions: 'ALWAYS use mcp__nuxt-ui-remote__get-component and mcp__nuxt-ui-remote__get-component-metadata before using any Nuxt UI component'
+  },
+  {
+    id: 'playwright',
+    name: 'Playwright MCP Server',
+    type: 'stdio',
+    command: 'npx',
+    args: ['@playwright/mcp@latest'],
+    description: 'Playwright browser automation for testing',
+    descriptionAr: 'أتمتة المتصفح للاختبار باستخدام Playwright',
+    relatedTechnologies: ['Playwright', 'Testing'],
+    category: 'testing',
+    checkInstructions: 'Use Playwright MCP for browser automation and E2E testing'
+  },
+  {
+    id: 'github',
+    name: 'GitHub MCP Server',
+    type: 'stdio',
+    command: 'gh',
+    args: [],
+    description: 'GitHub CLI integration',
+    descriptionAr: 'تكامل GitHub CLI',
+    relatedTechnologies: ['GitHub'],
+    category: 'other',
+    checkInstructions: 'Use GitHub CLI for repository management and CI/CD'
+  }
+]
+
+export const TECH_TO_MCP_MAP: Record<string, string[]> = {
+  'Nuxt 4': ['nuxt-remote'],
+  'Nuxt 3': ['nuxt-remote'],
+  'Nuxt UI': ['nuxt-ui-remote'],
+  'Vuetify': [],
+  'PrimeVue': [],
+  'Headless UI': [],
+  'Shadcn Vue': [],
+  'Playwright': ['playwright'],
+  'Testing': ['playwright'],
+  'GitHub': ['github']
+}
+
 export interface WizardState {
   // Step 1: Quick Reference & Project Overview
   projectType: ProjectType
@@ -208,7 +349,7 @@ export interface WizardState {
   // Step 7: Frontend Pages
   pages: Page[]
   frontendModules: FrontendModule[]
-  sharedComponents: string
+  sharedComponents: SharedComponent[]
 
   // Step 8: Features & Implementation
   mvpFeatures: string[]
@@ -227,6 +368,9 @@ export interface WizardState {
   // Step 10: Development Guidelines
   useTypeScript: TypeScriptMode
   developmentWarnings: DevelopmentWarning[]
+
+  // MCP Servers Configuration
+  selectedMcpServers: string[]
 
   // Project Status
   projectStatus: ProjectStatus
@@ -290,7 +434,8 @@ export const initialWizardState: WizardState = {
     frontend: 'Nuxt 4',
     backend: 'Express.js',
     database: 'MySQL',
-    auth: 'JWT'
+    auth: 'JWT',
+    uiLibrary: 'Nuxt UI'
   },
   architecture: 'monolith',
   multiTenancy: {
@@ -321,7 +466,7 @@ export const initialWizardState: WizardState = {
   // Step 6
   pages: [],
   frontendModules: [],
-  sharedComponents: '',
+  sharedComponents: [],
 
   // Step 7
   mvpFeatures: [],
@@ -355,6 +500,9 @@ export const initialWizardState: WizardState = {
     { warning: 'أضف loading states لكل عملية async' },
     { warning: 'استخدم دائماً أحدث إصدارات Nuxt & Nuxt UI & Zod' }
   ],
+
+  // MCP Servers (auto-selected based on tech stack)
+  selectedMcpServers: ['nuxt-remote', 'nuxt-ui-remote'],
 
   // Project Status
   projectStatus: 'planning'

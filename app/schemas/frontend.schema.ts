@@ -16,10 +16,16 @@ const moduleSchema = z.object({
   pages: z.array(pageSchema).optional()
 })
 
+const sharedComponentSchema = z.object({
+  name: z.string().min(1),
+  description: z.string(),
+  category: z.enum(['layout', 'data', 'feedback', 'form', 'navigation', 'utility'])
+})
+
 export const frontendSchema = z.object({
   pages: z.array(pageSchema).optional(),
   frontendModules: z.array(moduleSchema).optional(),
-  sharedComponents: z.string().optional()
+  sharedComponents: z.array(sharedComponentSchema).optional()
 }).refine(
   (data) => {
     const hasLegacyPages = data.pages && data.pages.length > 0

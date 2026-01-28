@@ -1,0 +1,8 @@
+{
+  "enabledMcpjsonServers": [
+    "nuxt-remote",
+    "nuxt-ui-remote",
+    "playwright"
+  ],
+  "enableAllProjectMcpServers": true
+}

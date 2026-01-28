@@ -39,6 +39,7 @@ export function useMarkdownGenerator() {
     if (state.techStack.database) content += `\n| Database | ${state.techStack.database} |`
     if (state.techStack.auth) content += `\n| Auth | ${state.techStack.auth} |`
     if (state.techStack.runtime) content += `\n| Runtime | ${state.techStack.runtime} |`
+    if (state.techStack.uiLibrary) content += `\n| UI Library | ${state.techStack.uiLibrary} |`
     if (state.packageManager) content += `\n| Package Manager | ${state.packageManager} |`
     if (state.multiTenancy?.enabled) content += `\n| Multi-tenancy | ${state.multiTenancy.model} (${state.multiTenancy.isolationLevel}) |`
 
@@ -168,6 +169,7 @@ ${service.envVars?.length > 0 ? `Environment Variables: [${service.envVars.join(
     if (state.techStack.database) techStackLines.push(`Database: ${state.techStack.database}`)
     if (state.techStack.auth) techStackLines.push(`Authentication: ${state.techStack.auth}`)
     if (state.techStack.runtime) techStackLines.push(`Runtime: ${state.techStack.runtime}`)
+    if (state.techStack.uiLibrary) techStackLines.push(`UI Library: ${state.techStack.uiLibrary}`)
     if (state.techStack.orm) techStackLines.push(`ORM: ${state.techStack.orm}`)
     if (state.techStack.fileUpload) techStackLines.push(`File Upload: ${state.techStack.fileUpload}`)
     if (state.techStack.pdfGeneration) techStackLines.push(`PDF Generation: ${state.techStack.pdfGeneration}`)
@@ -300,37 +302,75 @@ ${group.description ? `> ${group.description}` : ''}
 
   // Generate Frontend Pages
   const generateFrontendPages = (state: WizardState): string => {
-    if (!state.pages?.length && !state.sharedComponents) return ''
+    const hasPages = state.pages?.length > 0
+    const hasModules = state.frontendModules?.length > 0
+    const hasComponents = state.sharedComponents?.length > 0
 
-    let content = `## Frontend Pages | صفحات الواجهة
+    if (!hasPages && !hasModules && !hasComponents) return ''
 
-### Pages List
+    let content = `## Frontend Pages | صفحات الواجهة\n`
+
+    if (hasModules) {
+      content += `\n### Modules\n`
+      state.frontendModules.forEach((mod) => {
+        content += `
+#### ${mod.name}
+> ${mod.description || 'No description'}
+> Base Path: ${mod.basePath}
+
 \`\`\`yaml\n`
-
-    state.pages?.forEach((page) => {
-      const permissions = (page.requiredPermissions?.length ?? 0) > 0
-        ? `\n  permissions: [${page.requiredPermissions?.join(', ')}]`
-        : ''
-      const roles = (page.requiredRoles?.length ?? 0) > 0
-        ? `\n  roles: [${page.requiredRoles?.join(', ')}]`
-        : ''
-      content += `${page.path}:
+        mod.pages?.forEach((page) => {
+          const permissions = (page.requiredPermissions?.length ?? 0) > 0
+            ? `\n  permissions: [${page.requiredPermissions?.join(', ')}]`
+            : ''
+          const roles = (page.requiredRoles?.length ?? 0) > 0
+            ? `\n  roles: [${page.requiredRoles?.join(', ')}]`
+            : ''
+          content += `${page.path}:
   name: ${page.name}
   description: ${page.description}
   auth: ${page.auth ? 'required' : 'public'}${permissions}${roles}
 
 `
-    })
+        })
+        content += `\`\`\`\n`
+      })
+    }
 
-    content += `\`\`\``
+    if (hasPages) {
+      content += `
+### Pages List
+\`\`\`yaml\n`
 
-    if (state.sharedComponents) {
+      state.pages?.forEach((page) => {
+        const permissions = (page.requiredPermissions?.length ?? 0) > 0
+          ? `\n  permissions: [${page.requiredPermissions?.join(', ')}]`
+          : ''
+        const roles = (page.requiredRoles?.length ?? 0) > 0
+          ? `\n  roles: [${page.requiredRoles?.join(', ')}]`
+          : ''
+        content += `${page.path}:
+  name: ${page.name}
+  description: ${page.description}
+  auth: ${page.auth ? 'required' : 'public'}${permissions}${roles}
+
+`
+      })
+
+      content += `\`\`\``
+    }
+
+    if (hasComponents) {
       content += `
 
-### Shared Components
-\`\`\`
-${state.sharedComponents}
-\`\`\``
+### Shared Components | المكونات المشتركة
+
+| المكون | الوصف |
+|--------|-------|
+`
+      state.sharedComponents.forEach((comp) => {
+        content += `| ${comp.name} | ${comp.description} |\n`
+      })
     }
 
     return content

@@ -2,7 +2,9 @@
 const { state, currentStep, visibleSteps, isFirstStep, isLastStep, nextStep, prevStep, isAutoSaving, lastSaved, currentProjectId, updateField, deleteProject, softDeleteProject } = useWizardState()
 const { validateStep } = useStepValidation()
 const { downloadMarkdown } = useMarkdownGenerator()
+const { downloadZip } = useZipGenerator()
 const toast = useToast()
+const isDownloadingZip = ref(false)
 
 const stepperItems = computed(() =>
   visibleSteps.value.map((step, index) => ({
@@ -67,6 +69,28 @@ function handleDownload() {
       color: 'error',
       icon: 'i-lucide-alert-circle'
     })
+  }
+}
+
+async function handleDownloadZip() {
+  isDownloadingZip.value = true
+  try {
+    await downloadZip(state.value)
+    toast.add({
+      title: 'تم التحميل',
+      description: 'تم تحميل مجلد المشروع بنجاح (ZIP)',
+      color: 'success',
+      icon: 'i-lucide-check-circle'
+    })
+  } catch {
+    toast.add({
+      title: 'خطأ',
+      description: 'حدث خطأ أثناء إنشاء الملف المضغوط',
+      color: 'error',
+      icon: 'i-lucide-alert-circle'
+    })
+  } finally {
+    isDownloadingZip.value = false
   }
 }
 
@@ -220,10 +244,18 @@ async function handleDeleteProject() {
           <div class="flex gap-2">
             <UButton
               v-if="isLastStep"
-              color="success"
-              icon="i-lucide-download"
-              label="تحميل الملف"
+              variant="ghost"
+              icon="i-lucide-file-text"
+              label="تحميل MD فقط"
               @click="handleDownload"
+            />
+            <UButton
+              v-if="isLastStep"
+              color="success"
+              icon="i-lucide-folder-archive"
+              label="تحميل مجلد المشروع"
+              :loading="isDownloadingZip"
+              @click="handleDownloadZip"
             />
             <UButton
               v-if="!isLastStep"

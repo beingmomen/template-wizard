@@ -10,7 +10,8 @@ const techStackSchema = z.object({
   orm: z.string().optional(),
   fileUpload: z.string().optional(),
   pdfGeneration: z.string().optional(),
-  email: z.string().optional()
+  email: z.string().optional(),
+  uiLibrary: z.string().optional()
 })
 
 const multiTenancySchema = z.object({
@@ -121,6 +122,15 @@ export const runtimeOptions = [
   { label: 'Node.js', value: 'Node.js' },
   { label: 'Bun', value: 'Bun' },
   { label: 'Deno', value: 'Deno' }
+]
+
+export const uiLibraryOptions = [
+  { label: 'Nuxt UI (Recommended)', value: 'Nuxt UI' },
+  { label: 'Vuetify', value: 'Vuetify' },
+  { label: 'PrimeVue', value: 'PrimeVue' },
+  { label: 'Headless UI', value: 'Headless UI' },
+  { label: 'Shadcn Vue', value: 'Shadcn Vue' },
+  { label: 'None', value: 'None' }
 ]
 
 export const architectureOptions = [

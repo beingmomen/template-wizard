@@ -17,6 +17,8 @@
     "@iconify-json/lucide": "^1.2.86",
     "@iconify-json/simple-icons": "^1.2.67",
     "@nuxt/ui": "^4.4.0",
+    "file-saver": "^2.0.5",
+    "jszip": "^3.10.1",
     "mongodb": "^7.0.0",
     "nanoid": "^5.1.6",
     "nuxt": "^4.2.2",
@@ -25,6 +27,7 @@
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.12.1",
+    "@types/file-saver": "^2.0.7",
     "eslint": "^9.39.2",
     "typescript": "^5.9.3",
     "vue-tsc": "^3.2.2"

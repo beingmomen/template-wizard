@@ -5,11 +5,13 @@ import {
   databaseOptions,
   authOptions,
   runtimeOptions,
+  uiLibraryOptions,
   architectureOptions,
   tenancyModelOptions,
   isolationLevelOptions,
   externalServiceTypeOptions
 } from '~/schemas/technical.schema'
+import { AVAILABLE_MCP_SERVERS, TECH_TO_MCP_MAP } from '~/types/wizard.types'
 
 const { state, updateField, updateNestedField } = useWizardState()
 
@@ -46,6 +48,7 @@ const backendItems = ref([...backendOptions])
 const databaseItems = ref([...databaseOptions])
 const authItems = ref([...authOptions])
 const runtimeItems = ref([...runtimeOptions])
+const uiLibraryItems = ref([...uiLibraryOptions])
 
 function onCreateFrontend(value) {
   frontendItems.value.push({ label: value, value })
@@ -70,6 +73,11 @@ function onCreateAuth(value) {
 function onCreateRuntime(value) {
   runtimeItems.value.push({ label: value, value })
   updateNestedField('techStack', 'runtime', value)
+}
+
+function onCreateUiLibrary(value) {
+  uiLibraryItems.value.push({ label: value, value })
+  updateNestedField('techStack', 'uiLibrary', value)
 }
 
 function addExternalService() {
@@ -111,6 +119,47 @@ function removeEnvVar(serviceIndex, varIndex) {
   const services = [...state.value.externalServices]
   services[serviceIndex].envVars.splice(varIndex, 1)
   updateField('externalServices', services)
+}
+
+const mcpServers = computed(() => AVAILABLE_MCP_SERVERS)
+
+function isServerSelected(serverId) {
+  return state.value.selectedMcpServers?.includes(serverId) || false
+}
+
+function toggleServer(serverId) {
+  const current = state.value.selectedMcpServers || []
+  if (current.includes(serverId)) {
+    updateField('selectedMcpServers', current.filter(id => id !== serverId))
+  } else {
+    updateField('selectedMcpServers', [...current, serverId])
+  }
+}
+
+function autoSelectMcpServers() {
+  const selectedTechs = [
+    state.value.techStack.frontend,
+    state.value.techStack.backend,
+    state.value.techStack.uiLibrary,
+    state.value.techStack.runtime
+  ].filter(Boolean)
+
+  const mcpIds = new Set()
+  selectedTechs.forEach(tech => {
+    const servers = TECH_TO_MCP_MAP[tech] || []
+    servers.forEach(id => mcpIds.add(id))
+  })
+
+  updateField('selectedMcpServers', Array.from(mcpIds))
+}
+
+function getRelatedTechBadgeColor(tech) {
+  const selectedTechs = [
+    state.value.techStack.frontend,
+    state.value.techStack.backend,
+    state.value.techStack.uiLibrary
+  ]
+  return selectedTechs.includes(tech) ? 'success' : 'neutral'
 }
 </script>
 
@@ -170,6 +219,19 @@ function removeEnvVar(serviceIndex, varIndex) {
             :search-input="{ placeholder: 'ابحث أو أضف جديد...' }"
             @update:model-value="updateNestedField('techStack', 'auth', $event)"
             @create="onCreateAuth"
+          />
+        </UFormField>
+
+        <UFormField v-if="needsFrontend" label="UI Library">
+          <USelectMenu
+            :model-value="state.techStack.uiLibrary"
+            :items="uiLibraryItems"
+            value-key="value"
+            create-item="always"
+            placeholder="اختر مكتبة UI"
+            :search-input="{ placeholder: 'ابحث أو أضف جديد...' }"
+            @update:model-value="updateNestedField('techStack', 'uiLibrary', $event)"
+            @create="onCreateUiLibrary"
           />
         </UFormField>
 
@@ -347,6 +409,70 @@ function removeEnvVar(serviceIndex, varIndex) {
           </div>
         </UFormField>
       </div>
+    </div>
+
+    <USeparator v-if="showExternalServices" />
+
+    <!-- MCP Servers Selection -->
+    <div class="space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-semibold text-gray-900 dark:text-white">MCP Servers</h3>
+        <UButton
+          size="sm"
+          variant="soft"
+          icon="i-lucide-wand-2"
+          @click="autoSelectMcpServers"
+        >
+          اختيار تلقائي
+        </UButton>
+      </div>
+
+      <UAlert
+        color="info"
+        variant="subtle"
+        icon="i-lucide-info"
+        title="MCP Servers"
+        description="سيتم تضمين هذه الـ MCP Servers في ملف .mcp.json وتعليمات CLAUDE.md للمشروع"
+      />
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <UCard
+          v-for="server in mcpServers"
+          :key="server.id"
+          :class="[
+            'cursor-pointer transition-all',
+            isServerSelected(server.id) ? 'ring-2 ring-primary-500' : ''
+          ]"
+          @click="toggleServer(server.id)"
+        >
+          <div class="flex items-start gap-3">
+            <UCheckbox
+              :model-value="isServerSelected(server.id)"
+              @click.stop
+              @update:model-value="toggleServer(server.id)"
+            />
+            <div class="flex-1">
+              <p class="font-medium text-gray-900 dark:text-white">{{ server.name }}</p>
+              <p class="text-sm text-gray-500 mt-1">{{ server.descriptionAr }}</p>
+              <div class="flex flex-wrap gap-1 mt-2">
+                <UBadge
+                  v-for="tech in server.relatedTechnologies"
+                  :key="tech"
+                  size="xs"
+                  :color="getRelatedTechBadgeColor(tech)"
+                  variant="subtle"
+                >
+                  {{ tech }}
+                </UBadge>
+              </div>
+            </div>
+          </div>
+        </UCard>
+      </div>
+
+      <p v-if="state.selectedMcpServers?.length > 0" class="text-sm text-gray-500">
+        تم اختيار {{ state.selectedMcpServers.length }} MCP server(s)
+      </p>
     </div>
   </div>
 </template>

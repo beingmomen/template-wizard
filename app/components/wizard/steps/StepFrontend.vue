@@ -1,4 +1,6 @@
 <script setup>
+import { COMMON_SHARED_COMPONENTS, COMPONENT_CATEGORY_LABELS } from '~/types/wizard.types'
+
 const { state, updateField } = useWizardState()
 
 const openModules = ref({})
@@ -131,6 +133,57 @@ function addAllCrudPages(moduleIndex) {
 
 function getModuleName(module) {
   return module.name || 'Module جديد'
+}
+
+const showComponentPicker = ref(false)
+const customComponent = ref({ name: '', description: '' })
+
+const componentCategories = computed(() => {
+  return Object.keys(COMPONENT_CATEGORY_LABELS)
+})
+
+function getComponentsByCategory(category) {
+  return COMMON_SHARED_COMPONENTS.filter(c => c.category === category)
+}
+
+function getCategoryLabel(category) {
+  return COMPONENT_CATEGORY_LABELS[category] || category
+}
+
+function isComponentSelected(name) {
+  return (state.value.sharedComponents || []).some(c => c.name === name)
+}
+
+function addComponent(component) {
+  const current = state.value.sharedComponents || []
+  if (!isComponentSelected(component.name)) {
+    updateField('sharedComponents', [...current, { ...component }])
+  }
+}
+
+function removeComponent(index) {
+  const current = [...(state.value.sharedComponents || [])]
+  current.splice(index, 1)
+  updateField('sharedComponents', current)
+}
+
+function addCustomComponent() {
+  if (!customComponent.value.name.trim()) return
+  const current = state.value.sharedComponents || []
+  if (!isComponentSelected(customComponent.value.name)) {
+    updateField('sharedComponents', [...current, {
+      name: customComponent.value.name.trim(),
+      description: customComponent.value.description.trim() || 'مكون مخصص',
+      category: 'utility'
+    }])
+  }
+  customComponent.value = { name: '', description: '' }
+}
+
+function addAllFromCategory(category) {
+  const current = state.value.sharedComponents || []
+  const toAdd = getComponentsByCategory(category).filter(c => !isComponentSelected(c.name))
+  updateField('sharedComponents', [...current, ...toAdd])
 }
 </script>
 
@@ -434,19 +487,163 @@ function getModuleName(module) {
     <USeparator />
 
     <!-- Shared Components -->
-    <UFormField label="المكونات المشتركة" name="sharedComponents">
-      <UTextarea
-        v-model="state.sharedComponents"
-        placeholder="اكتب المكونات المشتركة، مثال:
-- AppHeader: الهيدر الرئيسي مع القائمة
-- AppSidebar: القائمة الجانبية
-- DataTable: جدول بيانات مع pagination
-- ConfirmDialog: نافذة تأكيد الحذف
-- EmptyState: حالة عدم وجود بيانات"
-        :rows="4"
-        autoresize
-      />
-    </UFormField>
+    <div class="space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-semibold text-gray-900 dark:text-white">المكونات المشتركة</h3>
+        <UButton
+          size="sm"
+          variant="soft"
+          icon="i-lucide-plus"
+          @click="showComponentPicker = true"
+        >
+          إضافة من القائمة
+        </UButton>
+      </div>
+
+      <!-- Selected Components -->
+      <div v-if="state.sharedComponents?.length > 0" class="flex flex-wrap gap-2">
+        <UBadge
+          v-for="(comp, idx) in state.sharedComponents"
+          :key="idx"
+          size="lg"
+          variant="subtle"
+          class="flex items-center gap-2 pr-1"
+        >
+          <span>{{ comp.name }}</span>
+          <UButton
+            size="2xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-x"
+            class="rounded-full"
+            @click="removeComponent(idx)"
+          />
+        </UBadge>
+      </div>
+
+      <!-- Empty State -->
+      <div
+        v-else
+        class="text-center py-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-dashed border-gray-300 dark:border-gray-600"
+      >
+        <UIcon name="i-lucide-component" class="w-8 h-8 mx-auto text-gray-400" />
+        <p class="mt-2 text-sm text-gray-500">لم يتم اختيار أي مكونات مشتركة</p>
+        <UButton
+          size="xs"
+          variant="soft"
+          class="mt-3"
+          @click="showComponentPicker = true"
+        >
+          اختيار المكونات
+        </UButton>
+      </div>
+
+      <!-- Add Custom Component -->
+      <UCard variant="subtle">
+        <template #header>
+          <span class="text-sm font-medium">إضافة مكون مخصص</span>
+        </template>
+        <div class="flex gap-2">
+          <UInput
+            v-model="customComponent.name"
+            placeholder="اسم المكون"
+            size="sm"
+            class="flex-1"
+            dir="ltr"
+          />
+          <UInput
+            v-model="customComponent.description"
+            placeholder="الوصف"
+            size="sm"
+            class="flex-[2]"
+          />
+          <UButton
+            size="sm"
+            icon="i-lucide-plus"
+            :disabled="!customComponent.name.trim()"
+            @click="addCustomComponent"
+          >
+            إضافة
+          </UButton>
+        </div>
+      </UCard>
+
+      <!-- Quick Add by Category -->
+      <UCard variant="subtle">
+        <template #header>
+          <span class="text-sm font-medium">إضافة سريعة حسب التصنيف</span>
+        </template>
+        <div class="flex flex-wrap gap-2">
+          <UButton
+            v-for="category in componentCategories"
+            :key="category"
+            size="xs"
+            variant="soft"
+            @click="addAllFromCategory(category)"
+          >
+            + {{ getCategoryLabel(category) }}
+          </UButton>
+        </div>
+      </UCard>
+    </div>
+
+    <!-- Component Picker Modal -->
+    <UModal :open="showComponentPicker" @update:open="showComponentPicker = $event">
+      <template #content>
+        <div class="p-6 max-h-[80vh] overflow-y-auto">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-semibold">اختيار المكونات المشتركة</h3>
+            <UButton
+              variant="ghost"
+              icon="i-lucide-x"
+              @click="showComponentPicker = false"
+            />
+          </div>
+
+          <div class="space-y-6">
+            <div v-for="category in componentCategories" :key="category">
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="font-medium text-gray-700 dark:text-gray-300">
+                  {{ getCategoryLabel(category) }}
+                </h4>
+                <UButton
+                  size="2xs"
+                  variant="ghost"
+                  @click="addAllFromCategory(category)"
+                >
+                  إضافة الكل
+                </UButton>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <UButton
+                  v-for="comp in getComponentsByCategory(category)"
+                  :key="comp.name"
+                  size="sm"
+                  :variant="isComponentSelected(comp.name) ? 'solid' : 'outline'"
+                  :color="isComponentSelected(comp.name) ? 'primary' : 'neutral'"
+                  class="justify-start text-right"
+                  :disabled="isComponentSelected(comp.name)"
+                  @click="addComponent(comp)"
+                >
+                  <div class="flex flex-col items-start">
+                    <span class="font-medium" dir="ltr">{{ comp.name }}</span>
+                    <span class="text-xs opacity-70">{{ comp.description }}</span>
+                  </div>
+                </UButton>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <UButton
+              variant="ghost"
+              label="إغلاق"
+              @click="showComponentPicker = false"
+            />
+          </div>
+        </div>
+      </template>
+    </UModal>
 
     <!-- Delete Module Confirmation Modal -->
     <UModal :open="moduleDeleteConfirm.show" @update:open="moduleDeleteConfirm.show = $event">

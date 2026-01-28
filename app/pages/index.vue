@@ -154,6 +154,13 @@ function handleContinue() {
           icon="i-lucide-book-open"
           label="منهجية التطوير"
         />
+        <UButton
+          to="/changelog"
+          size="lg"
+          variant="ghost"
+          icon="i-lucide-history"
+          label="سجل التحديثات"
+        />
       </div>
 
       <!-- Info -->
