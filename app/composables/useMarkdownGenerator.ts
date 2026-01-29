@@ -1,4 +1,5 @@
 import type { WizardState, ProjectType } from '~/types/wizard.types'
+import { NUXT_UI_TEMPLATES } from '~/types/wizard.types'
 
 const projectTypeLabels: Record<ProjectType, string> = {
   'fullstack': 'Fullstack Application',
@@ -34,12 +35,14 @@ export function useMarkdownGenerator() {
 | الاسم التقني | ${state.projectNameTechnical} |
 | البنية | ${state.architecture} |`
 
-    if (state.techStack.frontend) content += `\n| Frontend | ${state.techStack.frontend} |`
-    if (state.techStack.backend) content += `\n| Backend | ${state.techStack.backend} |`
-    if (state.techStack.database) content += `\n| Database | ${state.techStack.database} |`
+    if (state.techStack.frontend) content += `\n| Frontend | ${formatTechWithVersion(state.techVersions, state.techStack.frontend)} |`
+    if (state.techStack.backend) content += `\n| Backend | ${formatTechWithVersion(state.techVersions, state.techStack.backend)} |`
+    if (state.techStack.database) content += `\n| Database | ${formatTechWithVersion(state.techVersions, state.techStack.database)} |`
     if (state.techStack.auth) content += `\n| Auth | ${state.techStack.auth} |`
-    if (state.techStack.runtime) content += `\n| Runtime | ${state.techStack.runtime} |`
-    if (state.techStack.uiLibrary) content += `\n| UI Library | ${state.techStack.uiLibrary} |`
+    if (state.techStack.runtime) content += `\n| Runtime | ${formatTechWithVersion(state.techVersions, state.techStack.runtime)} |`
+    if (state.techStack.uiLibrary) content += `\n| UI Library | ${formatTechWithVersion(state.techVersions, state.techStack.uiLibrary)} |`
+    if (state.techStack.frontendPort) content += `\n| Frontend Port | ${state.techStack.frontendPort} |`
+    if (state.techStack.port) content += `\n| Backend Port | ${state.techStack.port} |`
     if (state.packageManager) content += `\n| Package Manager | ${state.packageManager} |`
     if (state.multiTenancy?.enabled) content += `\n| Multi-tenancy | ${state.multiTenancy.model} (${state.multiTenancy.isolationLevel}) |`
 
@@ -71,7 +74,7 @@ ${state.solutionDescription}
 ${state.targetUsers}
 - النوع: ${state.targetUserType === 'individuals' ? 'أفراد' : state.targetUserType === 'companies' ? 'شركات' : 'كلاهما'}
 - المستوى: ${state.targetUserLevel === 'beginner' ? 'مبتدئ' : state.targetUserLevel === 'intermediate' ? 'متوسط' : 'متقدم'}
-- اللغة: ${state.primaryLanguage === 'ar' ? 'عربي' : state.primaryLanguage === 'en' ? 'إنجليزي' : 'كلاهما'}
+- اللغة: ${state.primaryLanguage === 'ar' ? 'عربي (RTL - من اليمين لليسار)' : state.primaryLanguage === 'en' ? 'إنجليزي (LTR - من اليسار لليمين)' : 'كلاهما (RTL + LTR) - يتطلب @nuxtjs/i18n + Nuxt UI locale'}
 \`\`\``
   }
 
@@ -164,16 +167,18 @@ ${service.envVars?.length > 0 ? `Environment Variables: [${service.envVars.join(
   // Generate Technical Requirements
   const generateTechnicalRequirements = (state: WizardState): string => {
     let techStackLines = []
-    if (state.techStack.frontend) techStackLines.push(`Frontend: ${state.techStack.frontend}`)
-    if (state.techStack.backend) techStackLines.push(`Backend: ${state.techStack.backend}`)
-    if (state.techStack.database) techStackLines.push(`Database: ${state.techStack.database}`)
+    if (state.techStack.frontend) techStackLines.push(`Frontend: ${formatTechWithVersion(state.techVersions, state.techStack.frontend)}`)
+    if (state.techStack.backend) techStackLines.push(`Backend: ${formatTechWithVersion(state.techVersions, state.techStack.backend)}`)
+    if (state.techStack.database) techStackLines.push(`Database: ${formatTechWithVersion(state.techVersions, state.techStack.database)}`)
     if (state.techStack.auth) techStackLines.push(`Authentication: ${state.techStack.auth}`)
-    if (state.techStack.runtime) techStackLines.push(`Runtime: ${state.techStack.runtime}`)
-    if (state.techStack.uiLibrary) techStackLines.push(`UI Library: ${state.techStack.uiLibrary}`)
+    if (state.techStack.runtime) techStackLines.push(`Runtime: ${formatTechWithVersion(state.techVersions, state.techStack.runtime)}`)
+    if (state.techStack.uiLibrary) techStackLines.push(`UI Library: ${formatTechWithVersion(state.techVersions, state.techStack.uiLibrary)}`)
     if (state.techStack.orm) techStackLines.push(`ORM: ${state.techStack.orm}`)
     if (state.techStack.fileUpload) techStackLines.push(`File Upload: ${state.techStack.fileUpload}`)
     if (state.techStack.pdfGeneration) techStackLines.push(`PDF Generation: ${state.techStack.pdfGeneration}`)
     if (state.techStack.email) techStackLines.push(`Email: ${state.techStack.email}`)
+    if (state.techStack.frontendPort) techStackLines.push(`Frontend Port: ${state.techStack.frontendPort}`)
+    if (state.techStack.port) techStackLines.push(`Backend Port: ${state.techStack.port}`)
 
     let content = `## Technical Requirements | المتطلبات التقنية
 
@@ -186,6 +191,12 @@ ${techStackLines.join('\n')}
 \`\`\`
 البنية: ${state.architecture === 'monolith' ? 'Monolith - تطبيق واحد' : state.architecture === 'monorepo' ? 'Monorepo - عدة تطبيقات' : 'Microservices - خدمات منفصلة'}
 \`\`\``
+
+    if (state.architecture === 'monorepo') {
+      content += `
+
+> **ملاحظة هامة**: في بنية Monorepo، يجب إنشاء التطبيقات داخل مجلد \`apps/\` والحزم المشتركة داخل مجلد \`packages/\`. لا تنشئ ملفات المشروع مباشرة في المجلد الرئيسي.`
+    }
 
     if (state.multiTenancy?.enabled) {
       content += `
@@ -302,6 +313,27 @@ ${group.description ? `> ${group.description}` : ''}
 
   // Generate Frontend Pages
   const generateFrontendPages = (state: WizardState): string => {
+    if (state.frontendMode === 'template' && state.selectedTemplate) {
+      const template = NUXT_UI_TEMPLATES.find(t => t.id === state.selectedTemplate)
+      if (template) {
+        return `## Frontend Pages | صفحات الواجهة
+
+### Nuxt UI Template: ${template.name}
+\`\`\`yaml
+Template: ${template.name}
+Framework: ${template.framework}
+Description: ${template.description}
+Preview: ${template.previewUrl}
+GitHub: ${template.githubUrl}
+Features:
+${template.features.map(f => `  - ${f}`).join('\n')}
+\`\`\`
+
+> استخدم هذا القالب كأساس للواجهة. قم بتشغيل \`/nuxt-ui-remote:setup_project_with_template\` واختر قالب "${template.name}".
+`
+      }
+    }
+
     const hasPages = state.pages?.length > 0
     const hasModules = state.frontendModules?.length > 0
     const hasComponents = state.sharedComponents?.length > 0

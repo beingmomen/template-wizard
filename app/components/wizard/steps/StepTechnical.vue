@@ -11,9 +11,23 @@ import {
   isolationLevelOptions,
   externalServiceTypeOptions
 } from '~/schemas/technical.schema'
-import { AVAILABLE_MCP_SERVERS, TECH_TO_MCP_MAP } from '~/types/wizard.types'
+import { AVAILABLE_MCP_SERVERS, TECH_TO_MCP_MAP, NUXT_UI_TEMPLATES } from '~/types/wizard.types'
 
 const { state, updateField, updateNestedField } = useWizardState()
+
+const filteredTemplates = computed(() => NUXT_UI_TEMPLATES)
+
+function selectFrontendMode(mode) {
+  updateField('frontendMode', mode)
+  if (mode === 'template') {
+    updateNestedField('techStack', 'frontend', 'Nuxt')
+    updateNestedField('techStack', 'uiLibrary', 'Nuxt UI')
+  }
+}
+
+function selectTemplate(templateId) {
+  updateField('selectedTemplate', templateId)
+}
 
 const needsFrontend = computed(() =>
   ['fullstack', 'frontend-only', 'chrome-extension'].includes(state.value.projectType)
@@ -78,6 +92,17 @@ function onCreateRuntime(value) {
 function onCreateUiLibrary(value) {
   uiLibraryItems.value.push({ label: value, value })
   updateNestedField('techStack', 'uiLibrary', value)
+}
+
+function updateTechVersion(techName, version) {
+  if (!techName) return
+  const versions = { ...(state.value.techVersions || {}) }
+  if (version) {
+    versions[techName] = version
+  } else {
+    delete versions[techName]
+  }
+  updateField('techVersions', versions)
 }
 
 function addExternalService() {
@@ -165,12 +190,145 @@ function getRelatedTechBadgeColor(tech) {
 
 <template>
   <div class="space-y-6">
+    <!-- Frontend Mode Selection -->
+    <div v-if="needsFrontend" class="space-y-4">
+      <h3 class="font-semibold text-gray-900 dark:text-white">أسلوب الواجهة الأمامية</h3>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div
+          class="relative cursor-pointer rounded-xl border-2 p-5 transition-all"
+          :class="state.frontendMode === 'template'
+            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 shadow-sm'
+            : 'border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700'"
+          @click="selectFrontendMode('template')"
+        >
+          <div v-if="state.frontendMode === 'template'" class="absolute top-3 start-3">
+            <UIcon name="i-lucide-check-circle-2" class="w-5 h-5 text-primary-500" />
+          </div>
+          <div class="flex items-start gap-3">
+            <div
+              class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+              :class="state.frontendMode === 'template' ? 'bg-primary-100 dark:bg-primary-900/40' : 'bg-gray-100 dark:bg-gray-800'"
+            >
+              <UIcon name="i-lucide-layout-template" class="w-5 h-5" :class="state.frontendMode === 'template' ? 'text-primary-500' : 'text-gray-500'" />
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-medium text-gray-900 dark:text-white">استخدام قالب Nuxt UI</span>
+                <UBadge size="xs" variant="subtle" color="primary">مُوصى به</UBadge>
+              </div>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                اختر قالب جاهز من Nuxt UI واستخدمه كأساس لمشروعك
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="relative cursor-pointer rounded-xl border-2 p-5 transition-all"
+          :class="state.frontendMode === 'custom'
+            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 shadow-sm'
+            : 'border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700'"
+          @click="selectFrontendMode('custom')"
+        >
+          <div v-if="state.frontendMode === 'custom'" class="absolute top-3 start-3">
+            <UIcon name="i-lucide-check-circle-2" class="w-5 h-5 text-primary-500" />
+          </div>
+          <div class="flex items-start gap-3">
+            <div
+              class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+              :class="state.frontendMode === 'custom' ? 'bg-primary-100 dark:bg-primary-900/40' : 'bg-gray-100 dark:bg-gray-800'"
+            >
+              <UIcon name="i-lucide-settings-2" class="w-5 h-5" :class="state.frontendMode === 'custom' ? 'text-primary-500' : 'text-gray-500'" />
+            </div>
+            <div>
+              <span class="font-medium text-gray-900 dark:text-white">اختيار يدوي</span>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                اختر Frontend framework و UI library وصمم الواجهة بنفسك
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Template Grid (shown when template mode is selected) -->
+      <div v-if="state.frontendMode === 'template'" class="space-y-3">
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          اختر القالب الأنسب لمشروعك:
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div
+            v-for="template in filteredTemplates"
+            :key="template.id"
+            class="relative cursor-pointer rounded-xl border-2 p-4 transition-all"
+            :class="state.selectedTemplate === template.id
+              ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 shadow-sm'
+              : 'border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700'"
+            @click="selectTemplate(template.id)"
+          >
+            <div v-if="state.selectedTemplate === template.id" class="absolute top-3 start-3">
+              <UIcon name="i-lucide-check-circle-2" class="w-5 h-5 text-primary-500" />
+            </div>
+            <div class="flex items-start gap-3">
+              <div
+                class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                :class="state.selectedTemplate === template.id ? 'bg-primary-100 dark:bg-primary-900/40' : 'bg-gray-100 dark:bg-gray-800'"
+              >
+                <UIcon
+                  :name="template.icon"
+                  class="w-4.5 h-4.5"
+                  :class="state.selectedTemplate === template.id ? 'text-primary-500' : 'text-gray-500 dark:text-gray-400'"
+                />
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="font-medium text-sm text-gray-900 dark:text-white">{{ template.name }}</span>
+                  <UBadge v-if="template.framework === 'vue'" size="xs" variant="subtle" color="neutral">Vue</UBadge>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ template.descriptionAr }}</p>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-1 mt-2">
+              <UBadge
+                v-for="feature in template.features"
+                :key="feature"
+                size="xs"
+                variant="subtle"
+                :color="state.selectedTemplate === template.id ? 'primary' : 'neutral'"
+              >
+                {{ feature }}
+              </UBadge>
+            </div>
+            <div class="mt-2">
+              <UButton
+                size="2xs"
+                variant="link"
+                icon="i-lucide-external-link"
+                :to="template.previewUrl"
+                target="_blank"
+                @click.stop
+              >
+                معاينة
+              </UButton>
+            </div>
+          </div>
+        </div>
+
+        <p v-if="!state.selectedTemplate" class="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
+          <UIcon name="i-lucide-info" class="w-4 h-4" />
+          اختر قالب للمتابعة
+        </p>
+      </div>
+    </div>
+
+    <USeparator v-if="needsFrontend" />
+
     <!-- Tech Stack -->
     <div v-if="showTechStack" class="space-y-4">
       <h3 class="font-semibold text-gray-900 dark:text-white">التقنيات المستخدمة</h3>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <UFormField v-if="needsFrontend" label="Frontend Framework" :required="needsFrontend">
+        <UFormField v-if="needsFrontend && state.frontendMode !== 'template'" label="Frontend Framework" :required="needsFrontend">
           <USelectMenu
             :model-value="state.techStack.frontend"
             :items="frontendItems"
@@ -181,6 +339,15 @@ function getRelatedTechBadgeColor(tech) {
             @update:model-value="updateNestedField('techStack', 'frontend', $event)"
             @create="onCreateFrontend"
           />
+          <UInput
+            :model-value="state.techVersions?.[state.techStack.frontend] || ''"
+            placeholder="الإصدار (اختياري، مثال: 4.0.0)"
+            size="sm"
+            class="mt-1"
+            dir="ltr"
+            @update:model-value="updateTechVersion(state.techStack.frontend, $event)"
+          />
+          <p class="text-xs text-dimmed mt-0.5">اتركه فارغاً لاستخدام أحدث إصدار (Latest)</p>
         </UFormField>
 
         <UFormField v-if="needsBackend" label="Backend Framework" :required="needsBackend">
@@ -194,6 +361,15 @@ function getRelatedTechBadgeColor(tech) {
             @update:model-value="updateNestedField('techStack', 'backend', $event)"
             @create="onCreateBackend"
           />
+          <UInput
+            :model-value="state.techVersions?.[state.techStack.backend] || ''"
+            placeholder="الإصدار (اختياري، مثال: 5.0.0)"
+            size="sm"
+            class="mt-1"
+            dir="ltr"
+            @update:model-value="updateTechVersion(state.techStack.backend, $event)"
+          />
+          <p class="text-xs text-dimmed mt-0.5">اتركه فارغاً لاستخدام أحدث إصدار (Latest)</p>
         </UFormField>
 
         <UFormField v-if="needsDatabase" label="Database" :required="needsDatabase">
@@ -207,6 +383,15 @@ function getRelatedTechBadgeColor(tech) {
             @update:model-value="updateNestedField('techStack', 'database', $event)"
             @create="onCreateDatabase"
           />
+          <UInput
+            :model-value="state.techVersions?.[state.techStack.database] || ''"
+            placeholder="الإصدار (اختياري، مثال: 8.0)"
+            size="sm"
+            class="mt-1"
+            dir="ltr"
+            @update:model-value="updateTechVersion(state.techStack.database, $event)"
+          />
+          <p class="text-xs text-dimmed mt-0.5">اتركه فارغاً لاستخدام أحدث إصدار (Latest)</p>
         </UFormField>
 
         <UFormField v-if="needsAuth" label="Authentication" :required="needsAuth">
@@ -220,9 +405,18 @@ function getRelatedTechBadgeColor(tech) {
             @update:model-value="updateNestedField('techStack', 'auth', $event)"
             @create="onCreateAuth"
           />
+          <UInput
+            :model-value="state.techVersions?.[state.techStack.auth] || ''"
+            placeholder="الإصدار (اختياري)"
+            size="sm"
+            class="mt-1"
+            dir="ltr"
+            @update:model-value="updateTechVersion(state.techStack.auth, $event)"
+          />
+          <p class="text-xs text-dimmed mt-0.5">اتركه فارغاً لاستخدام أحدث إصدار (Latest)</p>
         </UFormField>
 
-        <UFormField v-if="needsFrontend" label="UI Library">
+        <UFormField v-if="needsFrontend && state.frontendMode !== 'template'" label="UI Library">
           <USelectMenu
             :model-value="state.techStack.uiLibrary"
             :items="uiLibraryItems"
@@ -233,6 +427,15 @@ function getRelatedTechBadgeColor(tech) {
             @update:model-value="updateNestedField('techStack', 'uiLibrary', $event)"
             @create="onCreateUiLibrary"
           />
+          <UInput
+            :model-value="state.techVersions?.[state.techStack.uiLibrary] || ''"
+            placeholder="الإصدار (اختياري، مثال: 4.0.0)"
+            size="sm"
+            class="mt-1"
+            dir="ltr"
+            @update:model-value="updateTechVersion(state.techStack.uiLibrary, $event)"
+          />
+          <p class="text-xs text-dimmed mt-0.5">اتركه فارغاً لاستخدام أحدث إصدار (Latest)</p>
         </UFormField>
 
         <UFormField v-if="needsRuntime" label="Runtime">
@@ -246,6 +449,15 @@ function getRelatedTechBadgeColor(tech) {
             @update:model-value="updateNestedField('techStack', 'runtime', $event)"
             @create="onCreateRuntime"
           />
+          <UInput
+            :model-value="state.techVersions?.[state.techStack.runtime] || ''"
+            placeholder="الإصدار (اختياري، مثال: 22.0)"
+            size="sm"
+            class="mt-1"
+            dir="ltr"
+            @update:model-value="updateTechVersion(state.techStack.runtime, $event)"
+          />
+          <p class="text-xs text-dimmed mt-0.5">اتركه فارغاً لاستخدام أحدث إصدار (Latest)</p>
         </UFormField>
       </div>
     </div>
@@ -260,6 +472,33 @@ function getRelatedTechBadgeColor(tech) {
         class="flex flex-col gap-2"
       />
     </UFormField>
+
+    <!-- Ports -->
+    <div v-if="needsFrontend || needsBackend" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <UFormField v-if="needsFrontend" label="Frontend Port">
+        <UInput
+          :model-value="state.techStack.frontendPort || ''"
+          placeholder="3000"
+          dir="ltr"
+          @update:model-value="updateNestedField('techStack', 'frontendPort', $event)"
+        />
+        <template #hint>
+          <span class="text-xs text-gray-500">اتركه فارغاً لاستخدام المنفذ الافتراضي</span>
+        </template>
+      </UFormField>
+
+      <UFormField v-if="needsBackend" label="Backend Port">
+        <UInput
+          :model-value="state.techStack.port || ''"
+          placeholder="3001"
+          dir="ltr"
+          @update:model-value="updateNestedField('techStack', 'port', $event)"
+        />
+        <template #hint>
+          <span class="text-xs text-gray-500">اتركه فارغاً لاستخدام المنفذ الافتراضي</span>
+        </template>
+      </UFormField>
+    </div>
 
     <USeparator />
 

@@ -95,11 +95,12 @@ ${getPermissionSystemTypeLabel(state.value.permissionsConfig?.type)}
 `
 
   const ts = state.value.techStack
-  if (ts.backend) markdown += `- **Backend:** ${ts.backend}\n`
-  if (ts.frontend) markdown += `- **Frontend:** ${ts.frontend}\n`
-  if (ts.database) markdown += `- **قاعدة البيانات:** ${ts.database}\n`
+  const tv = state.value.techVersions
+  if (ts.backend) markdown += `- **Backend:** ${formatTechWithVersion(tv, ts.backend)}\n`
+  if (ts.frontend) markdown += `- **Frontend:** ${formatTechWithVersion(tv, ts.frontend)}\n`
+  if (ts.database) markdown += `- **قاعدة البيانات:** ${formatTechWithVersion(tv, ts.database)}\n`
   if (ts.auth) markdown += `- **المصادقة:** ${ts.auth}\n`
-  if (ts.runtime) markdown += `- **Runtime:** ${ts.runtime}\n`
+  if (ts.runtime) markdown += `- **Runtime:** ${formatTechWithVersion(tv, ts.runtime)}\n`
   if (ts.orm) markdown += `- **ORM:** ${ts.orm}\n`
 
   markdown += `

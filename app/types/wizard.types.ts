@@ -24,6 +24,7 @@ export type PermissionAction = 'create' | 'read' | 'update' | 'delete' | 'manage
 export type PermissionSystemType = 'role-based' | 'action-based' | 'resource-based' | 'custom'
 export type ExternalServiceType = 'AI' | 'Payment' | 'Auth' | 'Storage' | 'Email' | 'Analytics' | 'Other'
 export type PackageManager = 'pnpm' | 'npm' | 'yarn' | 'bun'
+export type FrontendMode = 'template' | 'custom'
 
 export type SharedComponentCategory = 'layout' | 'data' | 'feedback' | 'form' | 'navigation' | 'utility'
 
@@ -87,6 +88,154 @@ export const COMMON_SHARED_COMPONENTS: SharedComponent[] = [
   { name: 'OfflineIndicator', description: 'مؤشر عدم الاتصال', category: 'utility' }
 ]
 
+export interface NuxtUiTemplate {
+  id: string
+  name: string
+  nameAr: string
+  description: string
+  descriptionAr: string
+  icon: string
+  framework: 'nuxt' | 'vue'
+  features: string[]
+  previewUrl: string
+  githubUrl: string
+}
+
+export const NUXT_UI_TEMPLATES: NuxtUiTemplate[] = [
+  {
+    id: 'dashboard',
+    name: 'Dashboard',
+    nameAr: 'لوحة تحكم',
+    description: 'Multi-column admin dashboard interface',
+    descriptionAr: 'لوحة تحكم إدارية متعددة الأعمدة',
+    icon: 'i-lucide-bar-chart-big',
+    framework: 'nuxt',
+    features: ['Works with SaaS template', 'Charts and date pickers', 'Multi-column layout'],
+    previewUrl: 'https://dashboard-template.nuxt.dev',
+    githubUrl: 'https://github.com/nuxt-ui-templates/dashboard'
+  },
+  {
+    id: 'saas',
+    name: 'SaaS',
+    nameAr: 'تطبيق SaaS',
+    description: 'Landing, pricing, docs, blog and auth pages',
+    descriptionAr: 'صفحات هبوط، أسعار، توثيق، مدونة ومصادقة',
+    icon: 'i-lucide-cloud',
+    framework: 'nuxt',
+    features: ['Landing, pricing, docs & blog sections', 'Authentication pages', 'YAML content'],
+    previewUrl: 'https://saas-template.nuxt.dev',
+    githubUrl: 'https://github.com/nuxt-ui-templates/saas'
+  },
+  {
+    id: 'landing',
+    name: 'Landing',
+    nameAr: 'صفحة هبوط',
+    description: 'Modern landing page with features, pricing, testimonials',
+    descriptionAr: 'صفحة هبوط حديثة مع مميزات وأسعار وآراء العملاء',
+    icon: 'i-lucide-layout',
+    framework: 'nuxt',
+    features: ['Features, pricing, testimonials & FAQ', 'YAML content', 'Fully responsive'],
+    previewUrl: 'https://landing-template.nuxt.dev',
+    githubUrl: 'https://github.com/nuxt-ui-templates/landing'
+  },
+  {
+    id: 'docs',
+    name: 'Docs',
+    nameAr: 'توثيق',
+    description: 'Documentation site with markdown and full-text search',
+    descriptionAr: 'موقع توثيق مع Markdown وبحث نصي كامل',
+    icon: 'i-lucide-book',
+    framework: 'nuxt',
+    features: ['Markdown pages', 'Auto-generated navigation', 'Full-text search'],
+    previewUrl: 'https://docs-template.nuxt.dev',
+    githubUrl: 'https://github.com/nuxt-ui-templates/docs'
+  },
+  {
+    id: 'chat',
+    name: 'Chat',
+    nameAr: 'محادثة ذكية',
+    description: 'AI chatbot with auth and persistent history',
+    descriptionAr: 'شات بوت ذكي مع مصادقة وسجل محادثات',
+    icon: 'i-lucide-message-circle',
+    framework: 'nuxt',
+    features: ['GitHub authentication', 'Persistent chat history', 'Markdown syntax highlight'],
+    previewUrl: 'https://chat-template.nuxt.dev',
+    githubUrl: 'https://github.com/nuxt-ui-templates/chat'
+  },
+  {
+    id: 'editor',
+    name: 'Editor',
+    nameAr: 'محرر نصوص',
+    description: 'Rich text editor with TipTap and real-time collaboration',
+    descriptionAr: 'محرر نصوص غني مبني على TipTap مع تعاون فوري',
+    icon: 'i-lucide-file-text',
+    framework: 'nuxt',
+    features: ['Real-time collaboration', 'AI autocompletion', 'Suggestions, mentions & emojis'],
+    previewUrl: 'https://editor-template.nuxt.dev',
+    githubUrl: 'https://github.com/nuxt-ui-templates/editor'
+  },
+  {
+    id: 'portfolio',
+    name: 'Portfolio',
+    nameAr: 'معرض أعمال',
+    description: 'Portfolio to showcase work, skills and blog',
+    descriptionAr: 'معرض أعمال لعرض المشاريع والمهارات والمدونة',
+    icon: 'i-lucide-user',
+    framework: 'nuxt',
+    features: ['Projects, blog, speaking & about sections', 'Markdown & YAML content', 'Fully responsive'],
+    previewUrl: 'https://portfolio-template.nuxt.dev',
+    githubUrl: 'https://github.com/nuxt-ui-templates/portfolio'
+  },
+  {
+    id: 'changelog',
+    name: 'Changelog',
+    nameAr: 'سجل التغييرات',
+    description: 'Display GitHub release notes',
+    descriptionAr: 'عرض سجل التغييرات من GitHub',
+    icon: 'i-lucide-newspaper',
+    framework: 'nuxt',
+    features: ['GitHub API integration', 'Beautiful typography', 'Dark mode ready'],
+    previewUrl: 'https://changelog-template.nuxt.dev',
+    githubUrl: 'https://github.com/nuxt-ui-templates/changelog'
+  },
+  {
+    id: 'starter',
+    name: 'Starter',
+    nameAr: 'قالب بداية',
+    description: 'Minimal starter template with Nuxt and ESLint',
+    descriptionAr: 'قالب بداية بسيط مع Nuxt و ESLint',
+    icon: 'i-lucide-flower',
+    framework: 'nuxt',
+    features: ['Nuxt configured', 'ESLint configured'],
+    previewUrl: 'https://starter-template.nuxt.dev',
+    githubUrl: 'https://github.com/nuxt-ui-templates/starter'
+  },
+  {
+    id: 'dashboard-vue',
+    name: 'Dashboard (Vue)',
+    nameAr: 'لوحة تحكم (Vue)',
+    description: 'Multi-column dashboard for Vue apps',
+    descriptionAr: 'لوحة تحكم متعددة الأعمدة لتطبيقات Vue',
+    icon: 'i-lucide-bar-chart-big',
+    framework: 'vue',
+    features: ['Charts and date pickers', 'Multi-column layout'],
+    previewUrl: 'https://dashboard-vue-template.nuxt.dev',
+    githubUrl: 'https://github.com/nuxt-ui-templates/dashboard-vue'
+  },
+  {
+    id: 'starter-vue',
+    name: 'Starter (Vue)',
+    nameAr: 'قالب بداية (Vue)',
+    description: 'Minimal Vue starter with Vite and ESLint',
+    descriptionAr: 'قالب بداية بسيط لـ Vue مع Vite و ESLint',
+    icon: 'i-lucide-flower',
+    framework: 'vue',
+    features: ['Vite configured', 'ESLint configured'],
+    previewUrl: 'https://starter-vue-template.nuxt.dev',
+    githubUrl: 'https://github.com/nuxt-ui-templates/starter-vue'
+  }
+]
+
 export interface Permission {
   id: string
   name: string
@@ -139,6 +288,8 @@ export interface TechStack {
   pdfGeneration?: string
   email?: string
   uiLibrary?: string
+  port?: string
+  frontendPort?: string
 }
 
 export interface MultiTenancy {
@@ -255,9 +406,12 @@ export const AVAILABLE_MCP_SERVERS: MCPServer[] = [
     url: 'https://nuxt.com/mcp',
     description: 'Official Nuxt documentation and guidance',
     descriptionAr: 'وثائق وإرشادات Nuxt الرسمية',
-    relatedTechnologies: ['Nuxt 4', 'Nuxt 3'],
+    relatedTechnologies: ['Nuxt'],
     category: 'framework',
-    checkInstructions: 'ALWAYS use mcp__nuxt-remote__get-documentation-page and mcp__nuxt-remote__list-modules before creating any Nuxt file'
+    checkInstructions: `⛔ BLOCKING: Before creating ANY Nuxt file (page, component, composable, middleware, plugin), you MUST call:
+- \`mcp__nuxt-remote__get-documentation-page\` to verify file conventions
+- \`mcp__nuxt-remote__list-modules\` when adding any module
+Do NOT assume folder structure or file naming from memory.`
   },
   {
     id: 'nuxt-ui-remote',
@@ -268,14 +422,18 @@ export const AVAILABLE_MCP_SERVERS: MCPServer[] = [
     descriptionAr: 'وثائق مكونات Nuxt UI',
     relatedTechnologies: ['Nuxt UI'],
     category: 'ui',
-    checkInstructions: 'ALWAYS use mcp__nuxt-ui-remote__get-component and mcp__nuxt-ui-remote__get-component-metadata before using any Nuxt UI component'
+    checkInstructions: `⛔ BLOCKING: Before writing ANY <U...> component tag, you MUST call:
+- \`mcp__nuxt-ui-remote__get-component\` to get the component documentation
+- \`mcp__nuxt-ui-remote__get-component-metadata\` to verify props, slots, and events
+Writing a Nuxt UI component WITHOUT calling these tools first makes your code INVALID.
+Do NOT rely on training data — component APIs change between versions.`
   },
   {
     id: 'playwright',
     name: 'Playwright MCP Server',
     type: 'stdio',
-    command: 'npx',
-    args: ['@playwright/mcp@latest'],
+    command: 'cmd',
+    args: ['/c', 'npx', '@playwright/mcp@latest'],
     description: 'Playwright browser automation for testing',
     descriptionAr: 'أتمتة المتصفح للاختبار باستخدام Playwright',
     relatedTechnologies: ['Playwright', 'Testing'],
@@ -297,6 +455,7 @@ export const AVAILABLE_MCP_SERVERS: MCPServer[] = [
 ]
 
 export const TECH_TO_MCP_MAP: Record<string, string[]> = {
+  'Nuxt': ['nuxt-remote'],
   'Nuxt 4': ['nuxt-remote'],
   'Nuxt 3': ['nuxt-remote'],
   'Nuxt UI': ['nuxt-ui-remote'],
@@ -332,6 +491,7 @@ export interface WizardState {
 
   // Step 4: Technical Requirements
   techStack: TechStack
+  techVersions: Record<string, string>
   architecture: Architecture
   multiTenancy: MultiTenancy
   externalServices: ExternalService[]
@@ -347,6 +507,8 @@ export interface WizardState {
   apiGroups: ApiGroup[]
 
   // Step 7: Frontend Pages
+  frontendMode: FrontendMode
+  selectedTemplate: string | null
   pages: Page[]
   frontendModules: FrontendModule[]
   sharedComponents: SharedComponent[]
@@ -431,12 +593,15 @@ export const initialWizardState: WizardState = {
 
   // Step 4: Technical
   techStack: {
-    frontend: 'Nuxt 4',
+    frontend: 'Nuxt',
     backend: 'Express.js',
     database: 'MySQL',
     auth: 'JWT',
-    uiLibrary: 'Nuxt UI'
+    uiLibrary: 'Nuxt UI',
+    port: '',
+    frontendPort: ''
   },
+  techVersions: {},
   architecture: 'monolith',
   multiTenancy: {
     enabled: false
@@ -464,6 +629,8 @@ export const initialWizardState: WizardState = {
   apiGroups: [],
 
   // Step 6
+  frontendMode: 'template',
+  selectedTemplate: null,
   pages: [],
   frontendModules: [],
   sharedComponents: [],

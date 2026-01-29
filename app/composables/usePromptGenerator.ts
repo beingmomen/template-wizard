@@ -1,10 +1,17 @@
 import type { WizardState } from '~/types/wizard.types'
+import { NUXT_UI_TEMPLATES } from '~/types/wizard.types'
 
 export function usePromptGenerator() {
+  const isNuxtUiProject = (state: WizardState): boolean => {
+    return (state.techStack.uiLibrary && state.techStack.uiLibrary.includes('Nuxt UI'))
+      || state.selectedMcpServers.includes('nuxt-ui-remote')
+  }
+
   const generatePrompt = (state: WizardState): string => {
     const projectName = state.projectName || state.projectNameTechnical || 'Project'
+    const hasNuxtUi = isNuxtUiProject(state)
 
-    return `I'm starting a new project called "${projectName}". Please read the attached project files:
+    let prompt = `I'm starting a new project called "${projectName}". Please read the attached project files:
 
 📁 Files to read (in order):
 1. CLAUDE.md - Contains MANDATORY instructions you MUST follow
@@ -14,25 +21,68 @@ export function usePromptGenerator() {
 ⚠️ CRITICAL REQUIREMENTS:
 - Follow ALL instructions in CLAUDE.md exactly
 - Use ONLY the specified versions (check the version table carefully)
-- ALWAYS check MCP servers before creating framework/UI files
+- **MCP FIRST**: Follow the MCP FIRST checklist above — query MCP servers before creating ANY file, do NOT rely on training data for framework APIs
 - Create fix.md to log any issues you encounter and solve
-- Create README.md with setup and run instructions
+- After project setup is complete, create README.md with setup and run instructions
 - Never duplicate ENV variables between files
-- NO COMMENTS in code files
+- NO COMMENTS in code files`
+
+    if (state.architecture === 'monorepo') {
+      prompt += `
+- MONOREPO: Create apps in apps/ directory and shared packages in packages/ - DO NOT put project files in root`
+    }
+
+    if (hasNuxtUi) {
+      const templateName = state.frontendMode === 'template' && state.selectedTemplate
+        ? NUXT_UI_TEMPLATES.find(t => t.id === state.selectedTemplate)?.name
+        : null
+
+      prompt += `
+
+⭐ IMPORTANT - PROJECT SETUP:
+This project uses Nuxt UI. You MUST use /nuxt-ui-remote:setup_project_with_template as the FIRST step.`
+
+      if (templateName) {
+        prompt += `
+Select the **${templateName}** template when prompted.`
+      }
+
+      prompt += `
+DO NOT manually create nuxt.config.ts or install Nuxt UI - the MCP template handles everything.`
+    }
+
+    prompt += `
 
 📋 First Steps:
 1. Read and understand all files completely
 2. Confirm version requirements are clear
-3. Verify MCP servers are available in your environment
-4. Reply "Ready to implement ${projectName}" when ready
+3. Verify MCP servers are available in your environment`
+
+    if (hasNuxtUi) {
+      const setupTemplateName = state.frontendMode === 'template' && state.selectedTemplate
+        ? NUXT_UI_TEMPLATES.find(t => t.id === state.selectedTemplate)?.name
+        : null
+
+      prompt += `
+4. Run /nuxt-ui-remote:setup_project_with_template${setupTemplateName ? ` and select the **${setupTemplateName}** template` : ''} to create the project
+5. Reply "Ready to implement ${projectName}" when setup is complete`
+    } else {
+      prompt += `
+4. Reply "Ready to implement ${projectName}" when ready`
+    }
+
+    prompt += `
 
 ⚡ Do NOT start coding until you confirm you've read everything.`
+
+    return prompt
   }
 
   const generateClaudeCommand = (state: WizardState): string => {
     const projectName = state.projectName || state.projectNameTechnical || 'Project'
+    const hasNuxtUi = isNuxtUiProject(state)
 
-    return `---
+    let command = `---
 description: Initialize and implement ${projectName} from specification
 ---
 
@@ -46,26 +96,56 @@ Read the following files in order:
 - Create fix.md file for logging issues
 
 ## Implementation Steps
-1. Set up project structure following the specification
+`
+
+    if (hasNuxtUi) {
+      const templateName = state.frontendMode === 'template' && state.selectedTemplate
+        ? NUXT_UI_TEMPLATES.find(t => t.id === state.selectedTemplate)?.name
+        : null
+
+      command += `1. **FIRST**: Run /nuxt-ui-remote:setup_project_with_template${templateName ? ` and select the **${templateName}** template` : ' and select the appropriate template'}
+2. Copy CLAUDE.md, .mcp.json, fix.md, .env.example to the new project root
+3. Implement features phase by phase as defined in project-spec.md
+4. After implementation, create README.md with complete setup and run instructions
+5. Log any issues encountered in fix.md`
+    } else {
+      command += `1. Set up project structure following the specification
 2. Install dependencies with the specified package manager (${state.packageManager})
 3. Implement features phase by phase as defined in project-spec.md
-4. Create README.md with complete setup instructions
-5. Log any issues encountered in fix.md
+4. After implementation, create README.md with complete setup and run instructions
+5. Log any issues encountered in fix.md`
+    }
+
+    command += `
 
 ## Critical Rules
-- ALWAYS check MCP servers before creating framework/UI files
+- **MCP FIRST**: Follow the MCP FIRST checklist above — query MCP servers before creating ANY file, do NOT rely on training data for framework APIs
 - NEVER use versions different from specification
-- ALWAYS create README.md with setup and run instructions
+- ALWAYS create README.md with setup and run instructions after project is ready
 - ALWAYS log issues in fix.md with date, problem, and solution
-- NO COMMENTS in code files
+- NO COMMENTS in code files`
+
+    if (state.architecture === 'monorepo') {
+      command += `
+- MONOREPO: All applications go in apps/ directory, shared packages in packages/ directory. Root folder is for workspace config only.`
+    }
+
+    if (hasNuxtUi) {
+      command += `
+- DO NOT manually create nuxt.config.ts or install Nuxt UI - use /nuxt-ui-remote:setup_project_with_template`
+    }
+
+    command += `
 
 ## Version Requirements
-${state.techStack.frontend ? `- Frontend: ${state.techStack.frontend}` : ''}
-${state.techStack.uiLibrary && state.techStack.uiLibrary !== 'None' ? `- UI Library: ${state.techStack.uiLibrary}` : ''}
-${state.techStack.backend ? `- Backend: ${state.techStack.backend}` : ''}
-${state.techStack.database ? `- Database: ${state.techStack.database}` : ''}
+${state.techStack.frontend ? `- Frontend: ${formatTechWithVersion(state.techVersions, state.techStack.frontend)}` : ''}
+${state.techStack.uiLibrary && state.techStack.uiLibrary !== 'None' ? `- UI Library: ${formatTechWithVersion(state.techVersions, state.techStack.uiLibrary)}` : ''}
+${state.techStack.backend ? `- Backend: ${formatTechWithVersion(state.techVersions, state.techStack.backend)}` : ''}
+${state.techStack.database ? `- Database: ${formatTechWithVersion(state.techVersions, state.techStack.database)}` : ''}
 
 Reply "Ready to implement ${projectName}" when you've read all files.`
+
+    return command
   }
 
   return {

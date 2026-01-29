@@ -1,5 +1,58 @@
 export const releases = [
   {
+    version: '1.6.0',
+    date: '2026-01-29',
+    type: 'feature',
+    changes: [
+      'نقل اختيار قالب Nuxt UI من خطوة الواجهة إلى خطوة التقنيات كأول سؤال عند وجود واجهة أمامية',
+      'إضافة حقل Frontend Port منفصل عن Backend Port في خطوة التقنيات',
+      'تحسين حقل اللغة الأساسية - بطاقات اختيار غنية مع معلومات RTL/LTR واتجاه القراءة',
+      'إضافة تنبيه @nuxtjs/i18n عند اختيار دعم متعدد اللغات مع Nuxt UI locale',
+      'تعزيز تعليمات MCP في CLAUDE.md المُولَّد - قسم BLOCKING REQUIREMENT مع Pre-Code Checklist وجدول مرجعي وأمثلة',
+      'إضافة قسم MCP FIRST — NON-NEGOTIABLE في أعلى CLAUDE.md المُولَّد لضمان أعلى دقة'
+    ]
+  },
+  {
+    version: '1.5.0',
+    date: '2026-01-29',
+    type: 'feature',
+    changes: [
+      'إضافة وضع اختيار قالب Nuxt UI كخيار افتراضي في خطوة الواجهة - اختيار قالب جاهز بدلاً من التصميم اليدوي',
+      'دعم 11 قالب Nuxt UI جاهز: Dashboard, SaaS, Landing, Docs, Chat, Editor, Portfolio, Changelog, Starter + قوالب Vue',
+      'إضافة وضع التصميم اليدوي كبديل مع الحفاظ على كل الوظائف السابقة (Modules, Pages, Shared Components)',
+      'فلترة تلقائية للقوالب حسب الـ Framework المختار (Nuxt أو Vue)',
+      'تحديث الملفات المُولَّدة (project-spec.md, CLAUDE.md, Prompt) لذكر القالب المحدد بالاسم',
+      'إضافة migration تلقائي للمشاريع المحفوظة مسبقاً للتوافق مع النظام الجديد'
+    ]
+  },
+  {
+    version: '1.4.0',
+    date: '2025-01-29',
+    type: 'feature',
+    changes: [
+      'إضافة تحذير Monorepo Structure - منع إنشاء الملفات في root مباشرة',
+      'تغيير نظام الإصدارات - استخدام Latest بشكل افتراضي مع إمكانية تحديد إصدار محدد',
+      'دمج Nuxt 4 و Nuxt 3 في خيار واحد "Nuxt" مع حقل إصدار اختياري',
+      'إضافة حقول إصدار اختيارية لكل تقنية في خطوة التقنيات',
+      'تحديث جميع الملفات المُولَّدة (CLAUDE.md, Prompt, project-spec.md) لدعم Latest versions',
+      'تحديث تعليمات MCP FIRST في الملفات المُولَّدة - استخدام النص الجديد الأوضح',
+      'إضافة حقل Server Port في خطوة التقنيات لتحديد منفذ السيرفر'
+    ]
+  },
+  {
+    version: '1.3.0',
+    date: '2025-01-29',
+    type: 'feature',
+    changes: [
+      'دعم Nuxt UI MCP Template - إنشاء مشروع Nuxt UI بنقرة واحدة عبر /nuxt-ui-remote:setup_project_with_template',
+      'إضافة تعليمات PROJECT SETUP التلقائية في CLAUDE.md لمشاريع Nuxt UI',
+      'تحديث Prompt و Claude Command لدعم MCP Template كخطوة أولى',
+      'حذف README.md من ملف ZIP - يُنشأ بعد اكتمال المشروع الفعلي',
+      'إصلاح تحذير Playwright MCP على Windows (cmd /c wrapper)',
+      'إضافة ملف تحليل التغييرات (upgrade-analysis.md)'
+    ]
+  },
+  {
     version: '1.2.0',
     date: '2025-01-28',
     type: 'feature',

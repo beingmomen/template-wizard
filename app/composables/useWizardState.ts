@@ -197,13 +197,24 @@ export function useWizardState() {
     { deep: true }
   )
 
+  const migrateFrontendMode = (data: Record<string, any>) => {
+    if (!data.frontendMode) {
+      const hasExistingFrontend = (data.frontendModules?.length > 0) || (data.pages?.length > 0)
+      data.frontendMode = hasExistingFrontend ? 'custom' : 'template'
+    }
+    if (data.selectedTemplate === undefined) {
+      data.selectedTemplate = null
+    }
+    return data
+  }
+
   // Load state from localStorage (cache)
   const loadFromLocalStorage = () => {
     if (import.meta.client) {
       try {
         const saved = localStorage.getItem(STORAGE_KEY)
         if (saved) {
-          const parsed = JSON.parse(saved)
+          const parsed = migrateFrontendMode(JSON.parse(saved))
           state.value = { ...initialWizardState, ...parsed }
         }
       } catch (e) {
@@ -246,7 +257,8 @@ export function useWizardState() {
 
       if (response.project) {
         skipNextAutoSave.value = true
-        state.value = { ...initialWizardState, ...response.project.data }
+        const migratedData = migrateFrontendMode(response.project.data)
+        state.value = { ...initialWizardState, ...migratedData }
         currentProjectId.value = projectId
         saveToLocalStorage()
         currentStep.value = 0

@@ -22,7 +22,17 @@ const sharedComponentSchema = z.object({
   category: z.enum(['layout', 'data', 'feedback', 'form', 'navigation', 'utility'])
 })
 
-export const frontendSchema = z.object({
+const templateModeSchema = z.object({
+  frontendMode: z.literal('template'),
+  selectedTemplate: z.string().min(1, 'يجب اختيار قالب'),
+  pages: z.array(pageSchema).optional(),
+  frontendModules: z.array(moduleSchema).optional(),
+  sharedComponents: z.array(sharedComponentSchema).optional()
+})
+
+const customModeSchema = z.object({
+  frontendMode: z.literal('custom'),
+  selectedTemplate: z.string().nullable().optional(),
   pages: z.array(pageSchema).optional(),
   frontendModules: z.array(moduleSchema).optional(),
   sharedComponents: z.array(sharedComponentSchema).optional()
@@ -34,5 +44,10 @@ export const frontendSchema = z.object({
   },
   { message: 'أضف صفحة واحدة على الأقل', path: [] }
 )
+
+export const frontendSchema = z.discriminatedUnion('frontendMode', [
+  templateModeSchema,
+  customModeSchema
+])
 
 export type FrontendData = z.infer<typeof frontendSchema>

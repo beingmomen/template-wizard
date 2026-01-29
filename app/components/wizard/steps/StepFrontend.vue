@@ -1,7 +1,12 @@
 <script setup>
-import { COMMON_SHARED_COMPONENTS, COMPONENT_CATEGORY_LABELS } from '~/types/wizard.types'
+import { COMMON_SHARED_COMPONENTS, COMPONENT_CATEGORY_LABELS, NUXT_UI_TEMPLATES } from '~/types/wizard.types'
 
 const { state, updateField } = useWizardState()
+
+const selectedTemplateInfo = computed(() => {
+  if (!state.value.selectedTemplate) return null
+  return NUXT_UI_TEMPLATES.find(t => t.id === state.value.selectedTemplate)
+})
 
 const openModules = ref({})
 
@@ -189,461 +194,525 @@ function addAllFromCategory(category) {
 
 <template>
   <div class="space-y-6">
-    <!-- Frontend Modules -->
-    <FormDynamicArrayField
-      v-model="state.frontendModules"
-      label="الـ Modules"
-      add-label="إضافة Module"
-      :empty-item="emptyModule"
-      :min-items="0"
-      hide-delete-button
-    >
-      <template #default="{ item: module, index: moduleIndex }">
-        <div class="space-y-4 w-full">
-          <!-- Collapsible Header -->
-          <div
-            class="flex items-center justify-between cursor-pointer p-3 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            @click="toggleModule(moduleIndex)"
-          >
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-layout-grid" class="w-5 h-5 text-primary-500" />
-              <span class="font-medium text-gray-900 dark:text-white">{{ module.name || 'Module جديد' }}</span>
-              <UBadge size="xs" variant="subtle">{{ module.pages?.length || 0 }} صفحات</UBadge>
+    <!-- ==================== TEMPLATE MODE ==================== -->
+    <div v-if="state.frontendMode === 'template'">
+      <div v-if="selectedTemplateInfo" class="space-y-4">
+        <h3 class="font-semibold text-gray-900 dark:text-white">القالب المختار</h3>
+
+        <div class="p-5 rounded-xl border-2 border-primary-500 bg-primary-50 dark:bg-primary-900/20">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-lg bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center shrink-0">
+              <UIcon :name="selectedTemplateInfo.icon" class="w-6 h-6 text-primary-500" />
             </div>
-            <div class="flex items-center gap-2">
-              <UIcon
-                :name="isModuleOpen(moduleIndex) ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
-                class="w-4 h-4 text-gray-500 transition-transform"
-              />
-              <UButton
-                size="xs"
-                color="error"
-                variant="ghost"
-                icon="i-lucide-trash-2"
-                @click.stop="confirmDeleteModule(moduleIndex)"
-              />
-            </div>
-          </div>
-
-          <!-- Collapsible Content -->
-          <div v-show="isModuleOpen(moduleIndex)" class="space-y-4">
-
-          <!-- Module Info -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <UFormField label="اسم الـ Module" required>
-              <UInput
-                :model-value="module.name"
-                placeholder="المنتجات"
-                @update:model-value="updateModule(moduleIndex, 'name', $event)"
-              />
-            </UFormField>
-            <UFormField label="Base Path">
-              <UInput
-                :model-value="module.basePath"
-                placeholder="/products"
-                dir="ltr"
-                @update:model-value="updateModule(moduleIndex, 'basePath', $event)"
-              />
-            </UFormField>
-          </div>
-
-          <UFormField label="وصف الـ Module">
-            <UInput
-              :model-value="module.description"
-              placeholder="صفحات إدارة المنتجات"
-              @update:model-value="updateModule(moduleIndex, 'description', $event)"
-            />
-          </UFormField>
-
-          <!-- Pages Section -->
-          <div class="space-y-3">
-            <div class="flex items-center justify-between">
-              <label class="text-sm font-medium text-gray-600 dark:text-gray-400">
-                الصفحات
-              </label>
-              <div class="flex gap-2">
+            <div class="flex-1">
+              <div class="flex items-center gap-2">
+                <span class="text-lg font-semibold text-gray-900 dark:text-white">{{ selectedTemplateInfo.name }}</span>
+                <UBadge v-if="selectedTemplateInfo.framework === 'vue'" size="xs" variant="subtle" color="neutral">Vue</UBadge>
+              </div>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ selectedTemplateInfo.descriptionAr }}</p>
+              <div class="flex flex-wrap gap-1.5 mt-3">
+                <UBadge
+                  v-for="feature in selectedTemplateInfo.features"
+                  :key="feature"
+                  size="xs"
+                  variant="subtle"
+                  color="primary"
+                >
+                  {{ feature }}
+                </UBadge>
+              </div>
+              <div class="flex gap-3 mt-3">
                 <UButton
                   size="xs"
-                  variant="soft"
-                  icon="i-lucide-layers"
-                  label="إضافة CRUD كامل"
-                  @click="addAllCrudPages(moduleIndex)"
-                />
-                <UButton
-                  size="xs"
-                  variant="soft"
-                  icon="i-lucide-plus"
-                  label="إضافة صفحة"
-                  @click="addPageToModule(moduleIndex)"
-                />
+                  variant="link"
+                  icon="i-lucide-external-link"
+                  :to="selectedTemplateInfo.previewUrl"
+                  target="_blank"
+                >
+                  معاينة القالب
+                </UButton>
               </div>
             </div>
-
-            <!-- Pages List -->
-            <div v-if="module.pages?.length > 0" class="space-y-2">
-              <div
-                v-for="(page, pageIndex) in module.pages"
-                :key="pageIndex"
-                class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg space-y-3"
-              >
-                <div class="flex items-start gap-3">
-                  <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <UFormField label="المسار (Path)" required>
-                      <UInput
-                        :model-value="page.path"
-                        placeholder="/products"
-                        size="sm"
-                        dir="ltr"
-                        @update:model-value="updatePageInModule(moduleIndex, pageIndex, 'path', $event)"
-                      />
-                    </UFormField>
-
-                    <UFormField label="اسم الصفحة" required>
-                      <UInput
-                        :model-value="page.name"
-                        placeholder="صفحة المنتجات"
-                        size="sm"
-                        @update:model-value="updatePageInModule(moduleIndex, pageIndex, 'name', $event)"
-                      />
-                    </UFormField>
-                  </div>
-
-                  <UButton
-                    size="xs"
-                    color="error"
-                    variant="ghost"
-                    icon="i-lucide-trash-2"
-                    class="mt-6"
-                    @click="removePageFromModule(moduleIndex, pageIndex)"
-                  />
-                </div>
-
-                <UFormField label="وصف الصفحة" required>
-                  <UInput
-                    :model-value="page.description"
-                    placeholder="عرض قائمة المنتجات مع البحث والفلترة"
-                    size="sm"
-                    @update:model-value="updatePageInModule(moduleIndex, pageIndex, 'description', $event)"
-                  />
-                </UFormField>
-
-                <USwitch
-                  :model-value="page.auth"
-                  label="تتطلب تسجيل دخول"
-                  size="sm"
-                  @update:model-value="updatePageInModule(moduleIndex, pageIndex, 'auth', $event)"
-                />
-
-                <!-- Permissions & Roles -->
-                <template v-if="page.auth && (hasPermissions || hasRoles)">
-                  <UFormField v-if="hasPermissions" label="الصلاحيات المطلوبة">
-                    <PermissionsPermissionSelector
-                      :model-value="page.requiredPermissions || []"
-                      @update:model-value="updatePageInModule(moduleIndex, pageIndex, 'requiredPermissions', $event)"
-                    />
-                  </UFormField>
-
-                  <UFormField v-if="hasRoles" label="الأدوار المسموحة">
-                    <USelectMenu
-                      :model-value="page.requiredRoles || []"
-                      :items="availableRoles"
-                      multiple
-                      placeholder="اختر الأدوار المسموحة"
-                      value-key="value"
-                      size="sm"
-                      @update:model-value="updatePageInModule(moduleIndex, pageIndex, 'requiredRoles', $event)"
-                    />
-                  </UFormField>
-                </template>
-              </div>
-            </div>
-
-            <!-- Empty state for pages -->
-            <div
-              v-else
-              class="text-center py-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-dashed border-gray-300 dark:border-gray-600"
-            >
-              <UIcon name="i-lucide-layout" class="w-8 h-8 mx-auto text-gray-400" />
-              <p class="mt-2 text-sm text-gray-500">لا توجد صفحات في هذا الـ Module</p>
-              <div class="flex justify-center gap-2 mt-3">
-                <UButton
-                  size="xs"
-                  variant="soft"
-                  icon="i-lucide-layers"
-                  label="إضافة CRUD كامل"
-                  @click="addAllCrudPages(moduleIndex)"
-                />
-              </div>
-            </div>
-
-            <!-- Quick add pages -->
-            <div class="flex flex-wrap gap-2 pt-2">
-              <UButton size="xs" variant="ghost" @click="addCommonPagesToModule(moduleIndex, 'list')">+ قائمة</UButton>
-              <UButton size="xs" variant="ghost" @click="addCommonPagesToModule(moduleIndex, 'detail')">+ تفاصيل</UButton>
-              <UButton size="xs" variant="ghost" @click="addCommonPagesToModule(moduleIndex, 'create')">+ إنشاء</UButton>
-              <UButton size="xs" variant="ghost" @click="addCommonPagesToModule(moduleIndex, 'edit')">+ تعديل</UButton>
-            </div>
-          </div>
           </div>
         </div>
-      </template>
-    </FormDynamicArrayField>
 
-    <!-- Quick Add Common Modules -->
-    <UCard variant="subtle">
-      <template #header>
-        <span class="text-sm font-medium">إضافة سريعة - Modules شائعة</span>
-      </template>
-      <div class="flex flex-wrap gap-2">
-        <UButton
-          size="xs"
-          variant="soft"
-          @click="state.frontendModules.push({
-            name: 'المصادقة',
-            basePath: '/auth',
-            description: 'صفحات تسجيل الدخول والتسجيل',
-            pages: [
-              { path: '/login', name: 'تسجيل الدخول', description: 'صفحة تسجيل الدخول', auth: false, requiredPermissions: [], requiredRoles: [] },
-              { path: '/register', name: 'إنشاء حساب', description: 'صفحة إنشاء حساب جديد', auth: false, requiredPermissions: [], requiredRoles: [] },
-              { path: '/forgot-password', name: 'نسيت كلمة المرور', description: 'صفحة استعادة كلمة المرور', auth: false, requiredPermissions: [], requiredRoles: [] }
-            ]
-          })"
-        >
-          Auth Module
-        </UButton>
-        <UButton
-          size="xs"
-          variant="soft"
-          @click="state.frontendModules.push({
-            name: 'لوحة التحكم',
-            basePath: '/dashboard',
-            description: 'صفحات لوحة التحكم الرئيسية',
-            pages: [
-              { path: '/dashboard', name: 'الرئيسية', description: 'لوحة التحكم الرئيسية', auth: true, requiredPermissions: [], requiredRoles: [] }
-            ]
-          })"
-        >
-          Dashboard Module
-        </UButton>
-        <UButton
-          size="xs"
-          variant="soft"
-          @click="state.frontendModules.push({
-            name: 'المستخدمين',
-            basePath: '/users',
-            description: 'إدارة المستخدمين',
-            pages: []
-          })"
-        >
-          Users Module
-        </UButton>
-        <UButton
-          size="xs"
-          variant="soft"
-          @click="state.frontendModules.push({
-            name: 'الإعدادات',
-            basePath: '/settings',
-            description: 'إعدادات التطبيق والحساب',
-            pages: [
-              { path: '/settings', name: 'الإعدادات العامة', description: 'الإعدادات العامة للتطبيق', auth: true, requiredPermissions: [], requiredRoles: [] },
-              { path: '/settings/profile', name: 'الملف الشخصي', description: 'إعدادات الملف الشخصي', auth: true, requiredPermissions: [], requiredRoles: [] }
-            ]
-          })"
-        >
-          Settings Module
-        </UButton>
-      </div>
-    </UCard>
+        <UAlert
+          color="info"
+          variant="subtle"
+          icon="i-lucide-info"
+          description="سيتم إعداد المشروع باستخدام هذا القالب عبر أمر setup_project_with_template. لا تحتاج لتحديد صفحات أو مكونات يدوياً - القالب يتضمنها."
+        />
 
-    <!-- Legacy pages support (if any exist) -->
-    <div v-if="state.pages?.length > 0" class="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-      <div class="flex items-center gap-2 mb-2">
-        <UIcon name="i-lucide-alert-triangle" class="w-4 h-4 text-yellow-600" />
-        <span class="text-sm font-medium text-yellow-700 dark:text-yellow-300">
-          يوجد {{ state.pages.length }} صفحات قديمة بدون تصنيف
-        </span>
+        <p class="text-sm text-gray-500">
+          لتغيير القالب، ارجع إلى خطوة التقنيات.
+        </p>
       </div>
-      <p class="text-xs text-yellow-600 dark:text-yellow-400 mb-3">
-        يمكنك إنشاء Module جديد ونقل هذه الصفحات إليه
-      </p>
-      <UButton
-        size="xs"
-        variant="soft"
-        color="warning"
-        @click="() => {
-          state.frontendModules.push({
-            name: 'غير مصنف',
-            basePath: '/',
-            description: 'صفحات غير مصنفة',
-            pages: [...state.pages]
-          })
-          state.pages = []
-        }"
-      >
-        نقل للـ Modules
-      </UButton>
+
+      <div v-else class="text-center py-10 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+        <UIcon name="i-lucide-layout-template" class="w-10 h-10 mx-auto text-gray-400" />
+        <p class="mt-3 text-gray-500">لم يتم اختيار قالب بعد</p>
+        <p class="text-sm text-gray-400 mt-1">ارجع إلى خطوة التقنيات لاختيار قالب Nuxt UI</p>
+      </div>
     </div>
 
-    <USeparator />
-
-    <!-- Shared Components -->
-    <div class="space-y-4">
-      <div class="flex items-center justify-between">
-        <h3 class="font-semibold text-gray-900 dark:text-white">المكونات المشتركة</h3>
-        <UButton
-          size="sm"
-          variant="soft"
-          icon="i-lucide-plus"
-          @click="showComponentPicker = true"
-        >
-          إضافة من القائمة
-        </UButton>
-      </div>
-
-      <!-- Selected Components -->
-      <div v-if="state.sharedComponents?.length > 0" class="flex flex-wrap gap-2">
-        <UBadge
-          v-for="(comp, idx) in state.sharedComponents"
-          :key="idx"
-          size="lg"
-          variant="subtle"
-          class="flex items-center gap-2 pr-1"
-        >
-          <span>{{ comp.name }}</span>
-          <UButton
-            size="2xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-x"
-            class="rounded-full"
-            @click="removeComponent(idx)"
-          />
-        </UBadge>
-      </div>
-
-      <!-- Empty State -->
-      <div
-        v-else
-        class="text-center py-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-dashed border-gray-300 dark:border-gray-600"
+    <!-- ==================== CUSTOM MODE ==================== -->
+    <div v-else>
+      <!-- Frontend Modules -->
+      <FormDynamicArrayField
+        v-model="state.frontendModules"
+        label="الـ Modules"
+        add-label="إضافة Module"
+        :empty-item="emptyModule"
+        :min-items="0"
+        hide-delete-button
       >
-        <UIcon name="i-lucide-component" class="w-8 h-8 mx-auto text-gray-400" />
-        <p class="mt-2 text-sm text-gray-500">لم يتم اختيار أي مكونات مشتركة</p>
-        <UButton
-          size="xs"
-          variant="soft"
-          class="mt-3"
-          @click="showComponentPicker = true"
-        >
-          اختيار المكونات
-        </UButton>
-      </div>
+        <template #default="{ item: module, index: moduleIndex }">
+          <div class="space-y-4 w-full">
+            <!-- Collapsible Header -->
+            <div
+              class="flex items-center justify-between cursor-pointer p-3 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              @click="toggleModule(moduleIndex)"
+            >
+              <div class="flex items-center gap-2">
+                <UIcon name="i-lucide-layout-grid" class="w-5 h-5 text-primary-500" />
+                <span class="font-medium text-gray-900 dark:text-white">{{ module.name || 'Module جديد' }}</span>
+                <UBadge size="xs" variant="subtle">{{ module.pages?.length || 0 }} صفحات</UBadge>
+              </div>
+              <div class="flex items-center gap-2">
+                <UIcon
+                  :name="isModuleOpen(moduleIndex) ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                  class="w-4 h-4 text-gray-500 transition-transform"
+                />
+                <UButton
+                  size="xs"
+                  color="error"
+                  variant="ghost"
+                  icon="i-lucide-trash-2"
+                  @click.stop="confirmDeleteModule(moduleIndex)"
+                />
+              </div>
+            </div>
 
-      <!-- Add Custom Component -->
-      <UCard variant="subtle">
-        <template #header>
-          <span class="text-sm font-medium">إضافة مكون مخصص</span>
+            <!-- Collapsible Content -->
+            <div v-show="isModuleOpen(moduleIndex)" class="space-y-4">
+
+            <!-- Module Info -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <UFormField label="اسم الـ Module" required>
+                <UInput
+                  :model-value="module.name"
+                  placeholder="المنتجات"
+                  @update:model-value="updateModule(moduleIndex, 'name', $event)"
+                />
+              </UFormField>
+              <UFormField label="Base Path">
+                <UInput
+                  :model-value="module.basePath"
+                  placeholder="/products"
+                  dir="ltr"
+                  @update:model-value="updateModule(moduleIndex, 'basePath', $event)"
+                />
+              </UFormField>
+            </div>
+
+            <UFormField label="وصف الـ Module">
+              <UInput
+                :model-value="module.description"
+                placeholder="صفحات إدارة المنتجات"
+                @update:model-value="updateModule(moduleIndex, 'description', $event)"
+              />
+            </UFormField>
+
+            <!-- Pages Section -->
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <label class="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  الصفحات
+                </label>
+                <div class="flex gap-2">
+                  <UButton
+                    size="xs"
+                    variant="soft"
+                    icon="i-lucide-layers"
+                    label="إضافة CRUD كامل"
+                    @click="addAllCrudPages(moduleIndex)"
+                  />
+                  <UButton
+                    size="xs"
+                    variant="soft"
+                    icon="i-lucide-plus"
+                    label="إضافة صفحة"
+                    @click="addPageToModule(moduleIndex)"
+                  />
+                </div>
+              </div>
+
+              <!-- Pages List -->
+              <div v-if="module.pages?.length > 0" class="space-y-2">
+                <div
+                  v-for="(page, pageIndex) in module.pages"
+                  :key="pageIndex"
+                  class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg space-y-3"
+                >
+                  <div class="flex items-start gap-3">
+                    <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <UFormField label="المسار (Path)" required>
+                        <UInput
+                          :model-value="page.path"
+                          placeholder="/products"
+                          size="sm"
+                          dir="ltr"
+                          @update:model-value="updatePageInModule(moduleIndex, pageIndex, 'path', $event)"
+                        />
+                      </UFormField>
+
+                      <UFormField label="اسم الصفحة" required>
+                        <UInput
+                          :model-value="page.name"
+                          placeholder="صفحة المنتجات"
+                          size="sm"
+                          @update:model-value="updatePageInModule(moduleIndex, pageIndex, 'name', $event)"
+                        />
+                      </UFormField>
+                    </div>
+
+                    <UButton
+                      size="xs"
+                      color="error"
+                      variant="ghost"
+                      icon="i-lucide-trash-2"
+                      class="mt-6"
+                      @click="removePageFromModule(moduleIndex, pageIndex)"
+                    />
+                  </div>
+
+                  <UFormField label="وصف الصفحة" required>
+                    <UInput
+                      :model-value="page.description"
+                      placeholder="عرض قائمة المنتجات مع البحث والفلترة"
+                      size="sm"
+                      @update:model-value="updatePageInModule(moduleIndex, pageIndex, 'description', $event)"
+                    />
+                  </UFormField>
+
+                  <USwitch
+                    :model-value="page.auth"
+                    label="تتطلب تسجيل دخول"
+                    size="sm"
+                    @update:model-value="updatePageInModule(moduleIndex, pageIndex, 'auth', $event)"
+                  />
+
+                  <!-- Permissions & Roles -->
+                  <template v-if="page.auth && (hasPermissions || hasRoles)">
+                    <UFormField v-if="hasPermissions" label="الصلاحيات المطلوبة">
+                      <PermissionsPermissionSelector
+                        :model-value="page.requiredPermissions || []"
+                        @update:model-value="updatePageInModule(moduleIndex, pageIndex, 'requiredPermissions', $event)"
+                      />
+                    </UFormField>
+
+                    <UFormField v-if="hasRoles" label="الأدوار المسموحة">
+                      <USelectMenu
+                        :model-value="page.requiredRoles || []"
+                        :items="availableRoles"
+                        multiple
+                        placeholder="اختر الأدوار المسموحة"
+                        value-key="value"
+                        size="sm"
+                        @update:model-value="updatePageInModule(moduleIndex, pageIndex, 'requiredRoles', $event)"
+                      />
+                    </UFormField>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Empty state for pages -->
+              <div
+                v-else
+                class="text-center py-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-dashed border-gray-300 dark:border-gray-600"
+              >
+                <UIcon name="i-lucide-layout" class="w-8 h-8 mx-auto text-gray-400" />
+                <p class="mt-2 text-sm text-gray-500">لا توجد صفحات في هذا الـ Module</p>
+                <div class="flex justify-center gap-2 mt-3">
+                  <UButton
+                    size="xs"
+                    variant="soft"
+                    icon="i-lucide-layers"
+                    label="إضافة CRUD كامل"
+                    @click="addAllCrudPages(moduleIndex)"
+                  />
+                </div>
+              </div>
+
+              <!-- Quick add pages -->
+              <div class="flex flex-wrap gap-2 pt-2">
+                <UButton size="xs" variant="ghost" @click="addCommonPagesToModule(moduleIndex, 'list')">+ قائمة</UButton>
+                <UButton size="xs" variant="ghost" @click="addCommonPagesToModule(moduleIndex, 'detail')">+ تفاصيل</UButton>
+                <UButton size="xs" variant="ghost" @click="addCommonPagesToModule(moduleIndex, 'create')">+ إنشاء</UButton>
+                <UButton size="xs" variant="ghost" @click="addCommonPagesToModule(moduleIndex, 'edit')">+ تعديل</UButton>
+              </div>
+            </div>
+            </div>
+          </div>
         </template>
-        <div class="flex gap-2">
-          <UInput
-            v-model="customComponent.name"
-            placeholder="اسم المكون"
-            size="sm"
-            class="flex-1"
-            dir="ltr"
-          />
-          <UInput
-            v-model="customComponent.description"
-            placeholder="الوصف"
-            size="sm"
-            class="flex-[2]"
-          />
-          <UButton
-            size="sm"
-            icon="i-lucide-plus"
-            :disabled="!customComponent.name.trim()"
-            @click="addCustomComponent"
-          >
-            إضافة
-          </UButton>
-        </div>
-      </UCard>
+      </FormDynamicArrayField>
 
-      <!-- Quick Add by Category -->
+      <!-- Quick Add Common Modules -->
       <UCard variant="subtle">
         <template #header>
-          <span class="text-sm font-medium">إضافة سريعة حسب التصنيف</span>
+          <span class="text-sm font-medium">إضافة سريعة - Modules شائعة</span>
         </template>
         <div class="flex flex-wrap gap-2">
           <UButton
-            v-for="category in componentCategories"
-            :key="category"
             size="xs"
             variant="soft"
-            @click="addAllFromCategory(category)"
+            @click="state.frontendModules.push({
+              name: 'المصادقة',
+              basePath: '/auth',
+              description: 'صفحات تسجيل الدخول والتسجيل',
+              pages: [
+                { path: '/login', name: 'تسجيل الدخول', description: 'صفحة تسجيل الدخول', auth: false, requiredPermissions: [], requiredRoles: [] },
+                { path: '/register', name: 'إنشاء حساب', description: 'صفحة إنشاء حساب جديد', auth: false, requiredPermissions: [], requiredRoles: [] },
+                { path: '/forgot-password', name: 'نسيت كلمة المرور', description: 'صفحة استعادة كلمة المرور', auth: false, requiredPermissions: [], requiredRoles: [] }
+              ]
+            })"
           >
-            + {{ getCategoryLabel(category) }}
+            Auth Module
+          </UButton>
+          <UButton
+            size="xs"
+            variant="soft"
+            @click="state.frontendModules.push({
+              name: 'لوحة التحكم',
+              basePath: '/dashboard',
+              description: 'صفحات لوحة التحكم الرئيسية',
+              pages: [
+                { path: '/dashboard', name: 'الرئيسية', description: 'لوحة التحكم الرئيسية', auth: true, requiredPermissions: [], requiredRoles: [] }
+              ]
+            })"
+          >
+            Dashboard Module
+          </UButton>
+          <UButton
+            size="xs"
+            variant="soft"
+            @click="state.frontendModules.push({
+              name: 'المستخدمين',
+              basePath: '/users',
+              description: 'إدارة المستخدمين',
+              pages: []
+            })"
+          >
+            Users Module
+          </UButton>
+          <UButton
+            size="xs"
+            variant="soft"
+            @click="state.frontendModules.push({
+              name: 'الإعدادات',
+              basePath: '/settings',
+              description: 'إعدادات التطبيق والحساب',
+              pages: [
+                { path: '/settings', name: 'الإعدادات العامة', description: 'الإعدادات العامة للتطبيق', auth: true, requiredPermissions: [], requiredRoles: [] },
+                { path: '/settings/profile', name: 'الملف الشخصي', description: 'إعدادات الملف الشخصي', auth: true, requiredPermissions: [], requiredRoles: [] }
+              ]
+            })"
+          >
+            Settings Module
           </UButton>
         </div>
       </UCard>
-    </div>
 
-    <!-- Component Picker Modal -->
-    <UModal :open="showComponentPicker" @update:open="showComponentPicker = $event">
-      <template #content>
-        <div class="p-6 max-h-[80vh] overflow-y-auto">
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="text-lg font-semibold">اختيار المكونات المشتركة</h3>
+      <!-- Legacy pages support (if any exist) -->
+      <div v-if="state.pages?.length > 0" class="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+        <div class="flex items-center gap-2 mb-2">
+          <UIcon name="i-lucide-alert-triangle" class="w-4 h-4 text-yellow-600" />
+          <span class="text-sm font-medium text-yellow-700 dark:text-yellow-300">
+            يوجد {{ state.pages.length }} صفحات قديمة بدون تصنيف
+          </span>
+        </div>
+        <p class="text-xs text-yellow-600 dark:text-yellow-400 mb-3">
+          يمكنك إنشاء Module جديد ونقل هذه الصفحات إليه
+        </p>
+        <UButton
+          size="xs"
+          variant="soft"
+          color="warning"
+          @click="() => {
+            state.frontendModules.push({
+              name: 'غير مصنف',
+              basePath: '/',
+              description: 'صفحات غير مصنفة',
+              pages: [...state.pages]
+            })
+            state.pages = []
+          }"
+        >
+          نقل للـ Modules
+        </UButton>
+      </div>
+
+      <USeparator />
+
+      <!-- Shared Components -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-semibold text-gray-900 dark:text-white">المكونات المشتركة</h3>
+          <UButton
+            size="sm"
+            variant="soft"
+            icon="i-lucide-plus"
+            @click="showComponentPicker = true"
+          >
+            إضافة من القائمة
+          </UButton>
+        </div>
+
+        <!-- Selected Components -->
+        <div v-if="state.sharedComponents?.length > 0" class="flex flex-wrap gap-2">
+          <UBadge
+            v-for="(comp, idx) in state.sharedComponents"
+            :key="idx"
+            size="lg"
+            variant="subtle"
+            class="flex items-center gap-2 pr-1"
+          >
+            <span>{{ comp.name }}</span>
             <UButton
+              size="2xs"
+              color="neutral"
               variant="ghost"
               icon="i-lucide-x"
-              @click="showComponentPicker = false"
+              class="rounded-full"
+              @click="removeComponent(idx)"
             />
-          </div>
+          </UBadge>
+        </div>
 
-          <div class="space-y-6">
-            <div v-for="category in componentCategories" :key="category">
-              <div class="flex items-center justify-between mb-3">
-                <h4 class="font-medium text-gray-700 dark:text-gray-300">
-                  {{ getCategoryLabel(category) }}
-                </h4>
-                <UButton
-                  size="2xs"
-                  variant="ghost"
-                  @click="addAllFromCategory(category)"
-                >
-                  إضافة الكل
-                </UButton>
-              </div>
-              <div class="grid grid-cols-2 gap-2">
-                <UButton
-                  v-for="comp in getComponentsByCategory(category)"
-                  :key="comp.name"
-                  size="sm"
-                  :variant="isComponentSelected(comp.name) ? 'solid' : 'outline'"
-                  :color="isComponentSelected(comp.name) ? 'primary' : 'neutral'"
-                  class="justify-start text-right"
-                  :disabled="isComponentSelected(comp.name)"
-                  @click="addComponent(comp)"
-                >
-                  <div class="flex flex-col items-start">
-                    <span class="font-medium" dir="ltr">{{ comp.name }}</span>
-                    <span class="text-xs opacity-70">{{ comp.description }}</span>
-                  </div>
-                </UButton>
+        <!-- Empty State -->
+        <div
+          v-else
+          class="text-center py-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-dashed border-gray-300 dark:border-gray-600"
+        >
+          <UIcon name="i-lucide-component" class="w-8 h-8 mx-auto text-gray-400" />
+          <p class="mt-2 text-sm text-gray-500">لم يتم اختيار أي مكونات مشتركة</p>
+          <UButton
+            size="xs"
+            variant="soft"
+            class="mt-3"
+            @click="showComponentPicker = true"
+          >
+            اختيار المكونات
+          </UButton>
+        </div>
+
+        <!-- Add Custom Component -->
+        <UCard variant="subtle">
+          <template #header>
+            <span class="text-sm font-medium">إضافة مكون مخصص</span>
+          </template>
+          <div class="flex gap-2">
+            <UInput
+              v-model="customComponent.name"
+              placeholder="اسم المكون"
+              size="sm"
+              class="flex-1"
+              dir="ltr"
+            />
+            <UInput
+              v-model="customComponent.description"
+              placeholder="الوصف"
+              size="sm"
+              class="flex-[2]"
+            />
+            <UButton
+              size="sm"
+              icon="i-lucide-plus"
+              :disabled="!customComponent.name.trim()"
+              @click="addCustomComponent"
+            >
+              إضافة
+            </UButton>
+          </div>
+        </UCard>
+
+        <!-- Quick Add by Category -->
+        <UCard variant="subtle">
+          <template #header>
+            <span class="text-sm font-medium">إضافة سريعة حسب التصنيف</span>
+          </template>
+          <div class="flex flex-wrap gap-2">
+            <UButton
+              v-for="category in componentCategories"
+              :key="category"
+              size="xs"
+              variant="soft"
+              @click="addAllFromCategory(category)"
+            >
+              + {{ getCategoryLabel(category) }}
+            </UButton>
+          </div>
+        </UCard>
+      </div>
+
+      <!-- Component Picker Modal -->
+      <UModal :open="showComponentPicker" @update:open="showComponentPicker = $event">
+        <template #content>
+          <div class="p-6 max-h-[80vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-lg font-semibold">اختيار المكونات المشتركة</h3>
+              <UButton
+                variant="ghost"
+                icon="i-lucide-x"
+                @click="showComponentPicker = false"
+              />
+            </div>
+
+            <div class="space-y-6">
+              <div v-for="category in componentCategories" :key="category">
+                <div class="flex items-center justify-between mb-3">
+                  <h4 class="font-medium text-gray-700 dark:text-gray-300">
+                    {{ getCategoryLabel(category) }}
+                  </h4>
+                  <UButton
+                    size="2xs"
+                    variant="ghost"
+                    @click="addAllFromCategory(category)"
+                  >
+                    إضافة الكل
+                  </UButton>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <UButton
+                    v-for="comp in getComponentsByCategory(category)"
+                    :key="comp.name"
+                    size="sm"
+                    :variant="isComponentSelected(comp.name) ? 'solid' : 'outline'"
+                    :color="isComponentSelected(comp.name) ? 'primary' : 'neutral'"
+                    class="justify-start text-right"
+                    :disabled="isComponentSelected(comp.name)"
+                    @click="addComponent(comp)"
+                  >
+                    <div class="flex flex-col items-start">
+                      <span class="font-medium" dir="ltr">{{ comp.name }}</span>
+                      <span class="text-xs opacity-70">{{ comp.description }}</span>
+                    </div>
+                  </UButton>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <UButton
-              variant="ghost"
-              label="إغلاق"
-              @click="showComponentPicker = false"
-            />
+            <div class="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <UButton
+                variant="ghost"
+                label="إغلاق"
+                @click="showComponentPicker = false"
+              />
+            </div>
           </div>
-        </div>
-      </template>
-    </UModal>
+        </template>
+      </UModal>
+    </div>
 
     <!-- Delete Module Confirmation Modal -->
     <UModal :open="moduleDeleteConfirm.show" @update:open="moduleDeleteConfirm.show = $event">

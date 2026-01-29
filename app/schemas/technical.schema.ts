@@ -11,7 +11,9 @@ const techStackSchema = z.object({
   fileUpload: z.string().optional(),
   pdfGeneration: z.string().optional(),
   email: z.string().optional(),
-  uiLibrary: z.string().optional()
+  uiLibrary: z.string().optional(),
+  port: z.string().optional(),
+  frontendPort: z.string().optional()
 })
 
 const multiTenancySchema = z.object({
@@ -82,8 +84,7 @@ export function createTechnicalSchema(projectType: ProjectType) {
 export type TechnicalData = z.infer<typeof technicalSchema>
 
 export const frontendOptions = [
-  { label: 'Nuxt 4', value: 'Nuxt 4' },
-  { label: 'Nuxt 3', value: 'Nuxt 3' },
+  { label: 'Nuxt', value: 'Nuxt' },
   { label: 'Next.js', value: 'Next.js' },
   { label: 'Vue.js', value: 'Vue.js' },
   { label: 'React', value: 'React' },

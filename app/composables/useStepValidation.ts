@@ -151,6 +151,8 @@ export function useStepValidation() {
         }
       case 8:
         return {
+          frontendMode: state.value.frontendMode,
+          selectedTemplate: state.value.selectedTemplate,
           pages: state.value.pages,
           frontendModules: state.value.frontendModules,
           sharedComponents: state.value.sharedComponents

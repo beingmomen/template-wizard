@@ -33,92 +33,6 @@ export function useZipGenerator() {
     return JSON.stringify({ mcpServers }, null, 2)
   }
 
-  const generateReadme = (state: WizardState): string => {
-    const projectName = state.projectName || state.projectNameTechnical || 'Project'
-    const pm = state.packageManager
-
-    return `# ${projectName}
-
-${state.solutionDescription || 'Project description here.'}
-
-## Tech Stack
-
-| Category | Technology |
-|----------|------------|
-${state.techStack.frontend ? `| Frontend | ${state.techStack.frontend} |` : ''}
-${state.techStack.backend ? `| Backend | ${state.techStack.backend} |` : ''}
-${state.techStack.database ? `| Database | ${state.techStack.database} |` : ''}
-${state.techStack.uiLibrary && state.techStack.uiLibrary !== 'None' ? `| UI Library | ${state.techStack.uiLibrary} |` : ''}
-
-## Prerequisites
-
-- Node.js 18+ (or specified runtime)
-- ${pm} package manager
-
-## Setup
-
-1. Clone the repository
-\`\`\`bash
-git clone <repository-url>
-cd ${state.projectNameTechnical || 'project'}
-\`\`\`
-
-2. Install dependencies
-\`\`\`bash
-${pm} install
-\`\`\`
-
-3. Copy environment variables
-\`\`\`bash
-cp .env.example .env
-\`\`\`
-
-4. Configure your .env file with appropriate values
-
-5. Start development server
-\`\`\`bash
-${pm} dev
-\`\`\`
-
-## Available Scripts
-
-| Command | Description |
-|---------|-------------|
-| \`${pm} dev\` | Start development server |
-| \`${pm} build\` | Build for production |
-| \`${pm} preview\` | Preview production build |
-| \`${pm} lint\` | Run linter |
-| \`${pm} typecheck\` | Run type checking |
-
-## Project Structure
-
-\`\`\`
-├── app/                 # Application source
-├── server/              # Server-side code
-├── public/              # Static assets
-├── .env.example         # Environment variables template
-├── CLAUDE.md            # AI assistant guidelines
-├── fix.md               # Issue tracking log
-└── README.md            # This file
-\`\`\`
-
-## Environment Variables
-
-See \`.env.example\` for required environment variables.
-
-## Contributing
-
-1. Create a feature branch
-2. Make your changes
-3. Run tests and linting
-4. Submit a pull request
-
-## License
-
-[License Type]
-`
-  }
-
   const generateFixMd = (): string => {
     return `# Fix Log
 
@@ -163,13 +77,74 @@ Each entry should follow this structure:
     return content
   }
 
+  const generateTestPlaywrightCommand = (state: WizardState): string => {
+    const projectName = state.projectName || state.projectNameTechnical || 'Project'
+    const pm = state.packageManager || 'pnpm'
+
+    return `---
+description: Test ${projectName} using Playwright MCP
+---
+
+You are testing the "${projectName}" application using the Playwright MCP server.
+
+## Steps
+
+### 1. Ensure dev server is running
+Run \`${pm} dev\` in the background if not already running. Wait for the server to be ready at http://localhost:3000.
+
+### 2. Test core pages
+Use Playwright MCP (\`browser_navigate\`, \`browser_snapshot\`, \`browser_click\`) to test:
+
+**Home Page (http://localhost:3000)**
+- Page loads correctly
+- Main content is visible
+- Navigation links work
+
+**Key Pages**
+- Navigate to all main routes defined in the project
+- Verify each page loads without errors
+- Check that interactive elements (buttons, forms, links) are functional
+
+### 3. Test the latest feature
+Read the project's recent git commits or changelog to identify the latest changes, then:
+- Navigate to the relevant page/section that the feature affects
+- Interact with the new/modified UI elements
+- Verify the feature works as expected
+
+### 4. Report results
+After testing, provide a summary:
+\`\`\`
+## Test Results
+
+**Project:** ${projectName}
+**Server:** http://localhost:3000
+**Date:** [current date]
+
+### Pages Tested
+- [ ] Home page loads
+- [ ] [page name] works
+- [ ] [page name] works
+
+### Latest Feature: [feature name]
+- [ ] [specific test result]
+
+### Issues Found
+- [list any issues or "None"]
+\`\`\`
+
+## Important Notes
+- Use \`browser_snapshot\` (not screenshots) for checking page state
+- If a page takes time to load, use \`browser_wait_for\` with appropriate text
+- The wizard auto-creates a project and redirects, so wait for navigation to complete
+`
+  }
+
   const downloadZip = async (state: WizardState) => {
     const zip = new JSZip()
     const projectName = state.projectNameTechnical || 'project'
 
     zip.file('.mcp.json', generateMcpJson(state))
     zip.file('CLAUDE.md', generateClaudeMd(state))
-    zip.file('README.md', generateReadme(state))
     zip.file('project-spec.md', generateMarkdown(state))
     zip.file('fix.md', generateFixMd())
     zip.file('.env.example', generateEnvExample(state))
@@ -177,6 +152,7 @@ Each entry should follow this structure:
     const claudeFolder = zip.folder('.claude')
     const commandsFolder = claudeFolder?.folder('commands')
     commandsFolder?.file('project.md', generateClaudeCommand(state))
+    commandsFolder?.file('test-playwright.md', generateTestPlaywrightCommand(state))
 
     const blob = await zip.generateAsync({ type: 'blob' })
     saveAs(blob, `${projectName}.zip`)
@@ -184,7 +160,6 @@ Each entry should follow this structure:
 
   return {
     generateMcpJson,
-    generateReadme,
     generateFixMd,
     generateEnvExample,
     generatePrompt,
