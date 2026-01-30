@@ -166,7 +166,7 @@ ${service.envVars?.length > 0 ? `Environment Variables: [${service.envVars.join(
 
   // Generate Technical Requirements
   const generateTechnicalRequirements = (state: WizardState): string => {
-    let techStackLines = []
+    const techStackLines = []
     if (state.techStack.frontend) techStackLines.push(`Frontend: ${formatTechWithVersion(state.techVersions, state.techStack.frontend)}`)
     if (state.techStack.backend) techStackLines.push(`Backend: ${formatTechWithVersion(state.techVersions, state.techStack.backend)}`)
     if (state.techStack.database) techStackLines.push(`Database: ${formatTechWithVersion(state.techVersions, state.techStack.database)}`)
@@ -222,13 +222,19 @@ Isolation: ${state.multiTenancy.isolationLevel}
       content += `-- ${table.description || table.tableName}\n`
       content += `CREATE TABLE ${table.tableName} (\n`
       table.columns.forEach((col, i) => {
-        const type = col.type === 'string' ? 'VARCHAR(255)' :
-                     col.type === 'number' ? 'INT' :
-                     col.type === 'decimal' ? 'DECIMAL(10,2)' :
-                     col.type === 'boolean' ? 'BOOLEAN' :
-                     col.type === 'date' ? 'TIMESTAMP' :
-                     col.type === 'uuid' ? 'CHAR(36)' :
-                     col.type === 'json' ? 'JSON' : 'TEXT'
+        const type = col.type === 'string'
+          ? 'VARCHAR(255)'
+          : col.type === 'number'
+            ? 'INT'
+            : col.type === 'decimal'
+              ? 'DECIMAL(10,2)'
+              : col.type === 'boolean'
+                ? 'BOOLEAN'
+                : col.type === 'date'
+                  ? 'TIMESTAMP'
+                  : col.type === 'uuid'
+                    ? 'CHAR(36)'
+                    : col.type === 'json' ? 'JSON' : 'TEXT'
 
         const constraints = []
         if (col.constraints.includes('primary')) constraints.push('PRIMARY KEY')
@@ -274,8 +280,8 @@ ${state.routePrefix ? `Base Prefix: ${state.routePrefix}` : ''}
         : ''
       const queryParams = ep.queryParameters?.length > 0
         ? `\n  queryParameters:\n${ep.queryParameters.map(p =>
-            `    - ${p.name}: ${p.type}${p.required ? ' (required)' : ''}${p.description ? ` # ${p.description}` : ''}`
-          ).join('\n')}`
+          `    - ${p.name}: ${p.type}${p.required ? ' (required)' : ''}${p.description ? ` # ${p.description}` : ''}`
+        ).join('\n')}`
         : ''
       return `${ep.method} ${ep.path}:
   description: ${ep.description}
@@ -313,10 +319,13 @@ ${group.description ? `> ${group.description}` : ''}
 
   // Generate Frontend Pages
   const generateFrontendPages = (state: WizardState): string => {
-    if (state.frontendMode === 'template' && state.selectedTemplate) {
+    let content = ''
+    const isTemplateMode = state.frontendMode === 'template' && state.selectedTemplate
+
+    if (isTemplateMode) {
       const template = NUXT_UI_TEMPLATES.find(t => t.id === state.selectedTemplate)
       if (template) {
-        return `## Frontend Pages | صفحات الواجهة
+        content += `## Frontend Pages | صفحات الواجهة
 
 ### Nuxt UI Template: ${template.name}
 \`\`\`yaml
@@ -338,17 +347,21 @@ ${template.features.map(f => `  - ${f}`).join('\n')}
     const hasModules = state.frontendModules?.length > 0
     const hasComponents = state.sharedComponents?.length > 0
 
-    if (!hasPages && !hasModules && !hasComponents) return ''
+    if (!content && !hasPages && !hasModules && !hasComponents) return ''
 
-    let content = `## Frontend Pages | صفحات الواجهة\n`
+    if (!content) {
+      content = `## Frontend Pages | صفحات الواجهة\n`
+    }
 
     if (hasModules) {
-      content += `\n### Modules\n`
+      content += `\n### ${isTemplateMode ? 'Modules إضافية' : 'Modules'}\n`
       state.frontendModules.forEach((mod) => {
+        const moduleTypeLine = mod.moduleType ? `\n> Module Type: ${mod.moduleType}` : ''
+        const paginationLine = mod.paginationType ? `\n> Pagination: ${mod.paginationType}` : ''
         content += `
 #### ${mod.name}
 > ${mod.description || 'No description'}
-> Base Path: ${mod.basePath}
+> Base Path: ${mod.basePath}${moduleTypeLine}${paginationLine}
 
 \`\`\`yaml\n`
         mod.pages?.forEach((page) => {
@@ -487,9 +500,11 @@ ${ec.handling}
     if (!hasBackend && !hasFrontend) return ''
 
     const pm = state.packageManager || 'pnpm'
-    const installCmd = pm === 'npm' ? 'npm install' :
-                       pm === 'yarn' ? 'yarn add' :
-                       pm === 'bun' ? 'bun add' : 'pnpm add'
+    const installCmd = pm === 'npm'
+      ? 'npm install'
+      : pm === 'yarn'
+        ? 'yarn add'
+        : pm === 'bun' ? 'bun add' : 'pnpm add'
 
     let content = `## Dependencies | المتطلبات
 
@@ -567,11 +582,14 @@ ${state.useTypeScript === 'full' ? 'استخدم TypeScript في جميع الم
 `
 
     if (state.developmentWarnings?.length) {
-      content += `
+      const enabledWarnings = state.developmentWarnings.filter(w => w.enabled)
+      if (enabledWarnings.length > 0) {
+        content += `
 ### المحاذير والتأكيدات
 \`\`\`
-${state.developmentWarnings.map((w, i) => `${i + 1}. ${w.warning}`).join('\n')}
+${enabledWarnings.map((w, i) => `${i + 1}. ${w.warning}`).join('\n')}
 \`\`\``
+      }
     }
 
     return content

@@ -1,13 +1,13 @@
 // Wizard Types
 
-export type ProjectType =
-  | 'fullstack'
-  | 'frontend-only'
-  | 'backend-only'
-  | 'chrome-extension'
-  | 'cli-tool'
-  | 'library'
-  | 'integration'
+export type ProjectType
+  = | 'fullstack'
+    | 'frontend-only'
+    | 'backend-only'
+    | 'chrome-extension'
+    | 'cli-tool'
+    | 'library'
+    | 'integration'
 
 export type ProjectSize = 'small' | 'medium' | 'large'
 export type Architecture = 'monolith' | 'monorepo' | 'microservices'
@@ -25,6 +25,8 @@ export type PermissionSystemType = 'role-based' | 'action-based' | 'resource-bas
 export type ExternalServiceType = 'AI' | 'Payment' | 'Auth' | 'Storage' | 'Email' | 'Analytics' | 'Other'
 export type PackageManager = 'pnpm' | 'npm' | 'yarn' | 'bun'
 export type FrontendMode = 'template' | 'custom'
+export type ModuleType = 'index-only' | 'crud-modal' | 'index-add-edit' | 'full-crud' | 'view-edit-combined'
+export type PaginationType = 'backend' | 'frontend' | 'none'
 
 export type SharedComponentCategory = 'layout' | 'data' | 'feedback' | 'form' | 'navigation' | 'utility'
 
@@ -42,6 +44,20 @@ export const COMPONENT_CATEGORY_LABELS: Record<SharedComponentCategory, string> 
   navigation: 'التنقل',
   utility: 'أدوات مساعدة'
 }
+
+export const MODULE_TYPE_OPTIONS: { value: ModuleType, label: string, description: string }[] = [
+  { value: 'index-only', label: 'قائمة فقط', description: 'صفحة عرض البيانات فقط (للقراءة)' },
+  { value: 'crud-modal', label: 'CRUD عبر Modal', description: 'صفحة واحدة مع عمليات CRUD عبر نوافذ منبثقة' },
+  { value: 'index-add-edit', label: 'قائمة + نموذج', description: 'صفحة قائمة + صفحة نموذج مشتركة للإضافة والتعديل' },
+  { value: 'full-crud', label: 'CRUD كامل', description: 'صفحات منفصلة: قائمة + إضافة + تعديل + مشاهدة' },
+  { value: 'view-edit-combined', label: 'مشاهدة وتعديل معاً', description: 'قائمة + إضافة + صفحة مشتركة للمشاهدة والتعديل' }
+]
+
+export const PAGINATION_TYPE_OPTIONS: { value: PaginationType, label: string, description: string }[] = [
+  { value: 'backend', label: 'ترقيم من الخادم', description: 'Backend pagination' },
+  { value: 'frontend', label: 'ترقيم في الواجهة', description: 'Frontend pagination (كل البيانات محملة)' },
+  { value: 'none', label: 'بدون ترقيم', description: 'عرض كل البيانات في الجدول' }
+]
 
 export const COMMON_SHARED_COMPONENTS: SharedComponent[] = [
   { name: 'AppHeader', description: 'الهيدر الرئيسي مع الشعار وقائمة التنقل', category: 'layout' },
@@ -358,6 +374,8 @@ export interface FrontendModule {
   name: string
   basePath: string
   description: string
+  moduleType?: ModuleType
+  paginationType?: PaginationType
   pages: Page[]
 }
 
@@ -380,6 +398,8 @@ export interface EnvVariable {
 
 export interface DevelopmentWarning {
   warning: string
+  enabled: boolean
+  isDefault?: boolean
 }
 
 export type MCPServerCategory = 'framework' | 'ui' | 'testing' | 'database' | 'api' | 'other'
@@ -657,15 +677,15 @@ export const initialWizardState: WizardState = {
   // Step 9: Development Guidelines
   useTypeScript: 'config-only',
   developmentWarnings: [
-    { warning: 'قبل إنشاء أي صفحة أو component، قم بمراجعة MCP servers الخاصة بـ Nuxt & Nuxt UI' },
-    { warning: 'استخدم Zod schemas للتحقق من جميع المدخلات في Backend' },
-    { warning: 'اتبع نمط RTL في جميع عناصر الواجهة العربية' },
-    { warning: 'لا تستخدم TypeScript في ملفات Vue ما عدا إذا تم اختيار "TypeScript كامل"' },
-    { warning: 'استخدم composables بدلاً من mixins أو store مباشر' },
-    { warning: 'تجنب استخدام any في TypeScript - استخدم أنواع محددة' },
-    { warning: 'تأكد من معالجة الأخطاء (Error handling) في كل API call' },
-    { warning: 'أضف loading states لكل عملية async' },
-    { warning: 'استخدم دائماً أحدث إصدارات Nuxt & Nuxt UI & Zod' }
+    { warning: 'قبل إنشاء أي صفحة أو component، قم بمراجعة MCP servers الخاصة بـ Nuxt & Nuxt UI', enabled: true, isDefault: true },
+    { warning: 'استخدم Zod schemas للتحقق من جميع المدخلات في Backend', enabled: true, isDefault: true },
+    { warning: 'اتبع نمط RTL في جميع عناصر الواجهة العربية', enabled: true, isDefault: true },
+    { warning: 'لا تستخدم TypeScript في ملفات Vue ما عدا إذا تم اختيار "TypeScript كامل"', enabled: true, isDefault: true },
+    { warning: 'استخدم composables بدلاً من mixins أو store مباشر', enabled: true, isDefault: true },
+    { warning: 'تجنب استخدام any في TypeScript - استخدم أنواع محددة', enabled: true, isDefault: true },
+    { warning: 'تأكد من معالجة الأخطاء (Error handling) في كل API call', enabled: true, isDefault: true },
+    { warning: 'أضف loading states لكل عملية async', enabled: true, isDefault: true },
+    { warning: 'استخدم دائماً أحدث إصدارات Nuxt & Nuxt UI & Zod', enabled: true, isDefault: true }
   ],
 
   // MCP Servers (auto-selected based on tech stack)

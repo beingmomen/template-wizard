@@ -5,20 +5,60 @@ const { state, updateField } = useWizardState()
 const { generatePrompt } = usePromptGenerator()
 const toast = useToast()
 
-const emptyWarning = {
-  warning: ''
-}
-
 const generatedPrompt = computed(() => generatePrompt(state.value))
 
-function updateWarning(index, value) {
+const defaultWarningsList = computed(() =>
+  state.value.developmentWarnings.filter(w => w.isDefault)
+)
+
+const customWarnings = computed(() =>
+  state.value.developmentWarnings.filter(w => !w.isDefault)
+)
+
+function toggleDefaultWarning(defaultIndex, enabled) {
   const newWarnings = [...state.value.developmentWarnings]
-  newWarnings[index].warning = value
+  let count = 0
+  for (let i = 0; i < newWarnings.length; i++) {
+    if (newWarnings[i].isDefault) {
+      if (count === defaultIndex) {
+        newWarnings[i] = { ...newWarnings[i], enabled }
+        break
+      }
+      count++
+    }
+  }
+  updateField('developmentWarnings', newWarnings)
+}
+
+const emptyCustomWarning = {
+  warning: '',
+  enabled: true,
+  isDefault: false
+}
+
+function updateCustomWarnings(newCustom) {
+  const defaults = state.value.developmentWarnings.filter(w => w.isDefault)
+  updateField('developmentWarnings', [...defaults, ...newCustom])
+}
+
+function updateCustomWarning(customIndex, value) {
+  const newWarnings = [...state.value.developmentWarnings]
+  const nonDefaultIndices = []
+  for (let i = 0; i < newWarnings.length; i++) {
+    if (!newWarnings[i].isDefault) nonDefaultIndices.push(i)
+  }
+  if (nonDefaultIndices[customIndex] !== undefined) {
+    newWarnings[nonDefaultIndices[customIndex]] = {
+      ...newWarnings[nonDefaultIndices[customIndex]],
+      warning: value
+    }
+  }
   updateField('developmentWarnings', newWarnings)
 }
 
 function resetToDefaults() {
-  updateField('developmentWarnings', [...defaultWarnings])
+  const customOnes = state.value.developmentWarnings.filter(w => !w.isDefault)
+  updateField('developmentWarnings', [...defaultWarnings.map(w => ({ ...w })), ...customOnes])
 }
 
 async function copyPrompt() {
@@ -43,8 +83,11 @@ async function copyPrompt() {
 
 <template>
   <div class="space-y-6">
-    <!-- TypeScript Mode -->
-    <UFormField label="وضع TypeScript" name="useTypeScript" required>
+    <UFormField
+      label="وضع TypeScript"
+      name="useTypeScript"
+      required
+    >
       <URadioGroup
         v-model="state.useTypeScript"
         :items="typeScriptOptions"
@@ -63,7 +106,6 @@ async function copyPrompt() {
 
     <USeparator />
 
-    <!-- Development Warnings -->
     <div class="flex items-center justify-between">
       <label class="font-medium">المحاذير والتأكيدات</label>
       <UButton
@@ -75,46 +117,55 @@ async function copyPrompt() {
       />
     </div>
 
+    <div class="space-y-2">
+      <div
+        v-for="(warning, index) in defaultWarningsList"
+        :key="'default-' + index"
+        class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
+      >
+        <UCheckbox
+          :model-value="warning.enabled"
+          :label="warning.warning"
+          @update:model-value="toggleDefaultWarning(index, $event)"
+        />
+      </div>
+    </div>
+
     <FormDynamicArrayField
-      v-model="state.developmentWarnings"
-      label="قائمة المحاذير"
-      add-label="إضافة تحذير"
-      :empty-item="emptyWarning"
+      :model-value="customWarnings"
+      label="محاذير مخصصة"
+      add-label="إضافة تحذير مخصص"
+      :empty-item="emptyCustomWarning"
       :min-items="0"
+      @update:model-value="updateCustomWarnings($event)"
     >
       <template #default="{ item: warning, index }">
-        <UFormField label="نص التحذير" required>
+        <UFormField
+          label="نص التحذير"
+          required
+        >
           <UTextarea
             :model-value="warning.warning"
-            placeholder="اكتب التحذير أو التأكيد هنا..."
-            :rows="4"
+            placeholder="اكتب التحذير المخصص هنا..."
+            :rows="3"
             autoresize
-            @update:model-value="updateWarning(index, $event)"
+            @update:model-value="updateCustomWarning(index, $event)"
           />
         </UFormField>
       </template>
     </FormDynamicArrayField>
 
-    <UCard variant="subtle">
-      <template #header>
-        <span class="text-sm font-medium">أمثلة على المحاذير الإضافية</span>
-      </template>
-      <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-2 list-disc list-inside">
-        <li>استخدم useAsyncData بدلاً من useFetch داخل components</li>
-        <li>تأكد من إغلاق الـ database connections</li>
-        <li>استخدم environment variables للـ secrets</li>
-        <li>اتبع naming conventions الخاصة بالمشروع</li>
-        <li>أضف تعليقات للكود المعقد</li>
-      </ul>
-    </UCard>
-
     <USeparator />
 
-    <!-- AI Prompt Section -->
     <div class="space-y-4">
       <div class="flex items-center gap-2">
-        <UIcon name="i-lucide-terminal" class="text-xl text-primary-500" />
-        <h3 class="font-semibold text-gray-900 dark:text-white">نص الأمر الجاهز</h3>
+        <UIcon
+          name="i-lucide-terminal"
+          class="text-xl text-primary-500"
+        />
+        <h3 class="font-semibold text-gray-900 dark:text-white">
+          نص الأمر الجاهز
+        </h3>
       </div>
 
       <UAlert

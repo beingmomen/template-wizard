@@ -13,6 +13,8 @@ const moduleSchema = z.object({
   name: z.string().min(1, 'اسم الـ Module مطلوب'),
   basePath: z.string().optional(),
   description: z.string().optional(),
+  moduleType: z.enum(['index-only', 'crud-modal', 'index-add-edit', 'full-crud', 'view-edit-combined']).nullable().optional(),
+  paginationType: z.enum(['backend', 'frontend', 'none']).optional(),
   pages: z.array(pageSchema).optional()
 })
 

@@ -181,7 +181,7 @@ Before creating or modifying ANY file, verify:
 
 `
 
-    selectedServers.forEach(server => {
+    selectedServers.forEach((server) => {
       content += `#### ${server.name}
 ${server.checkInstructions}
 
@@ -233,10 +233,13 @@ ${server.checkInstructions}
     }
 
     if (state.developmentWarnings.length > 0) {
-      content += `\n### Development Warnings\n`
-      state.developmentWarnings.forEach(w => {
-        content += `- ${w.warning}\n`
-      })
+      const enabledWarnings = state.developmentWarnings.filter(w => w.enabled)
+      if (enabledWarnings.length > 0) {
+        content += `\n### Development Warnings\n`
+        enabledWarnings.forEach((w) => {
+          content += `- ${w.warning}\n`
+        })
+      }
     }
 
     content += '\n'

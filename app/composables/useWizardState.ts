@@ -197,7 +197,7 @@ export function useWizardState() {
     { deep: true }
   )
 
-  const migrateFrontendMode = (data: Record<string, any>) => {
+  const migrateState = (data: Record<string, any>) => {
     if (!data.frontendMode) {
       const hasExistingFrontend = (data.frontendModules?.length > 0) || (data.pages?.length > 0)
       data.frontendMode = hasExistingFrontend ? 'custom' : 'template'
@@ -205,6 +205,16 @@ export function useWizardState() {
     if (data.selectedTemplate === undefined) {
       data.selectedTemplate = null
     }
+
+    if (data.developmentWarnings?.length > 0 && data.developmentWarnings[0].enabled === undefined) {
+      const defaultTexts = initialWizardState.developmentWarnings.map(w => w.warning)
+      data.developmentWarnings = data.developmentWarnings.map((w: Record<string, any>) => ({
+        ...w,
+        enabled: true,
+        isDefault: defaultTexts.includes(w.warning)
+      }))
+    }
+
     return data
   }
 
@@ -214,7 +224,7 @@ export function useWizardState() {
       try {
         const saved = localStorage.getItem(STORAGE_KEY)
         if (saved) {
-          const parsed = migrateFrontendMode(JSON.parse(saved))
+          const parsed = migrateState(JSON.parse(saved))
           state.value = { ...initialWizardState, ...parsed }
         }
       } catch (e) {
@@ -257,7 +267,7 @@ export function useWizardState() {
 
       if (response.project) {
         skipNextAutoSave.value = true
-        const migratedData = migrateFrontendMode(response.project.data)
+        const migratedData = migrateState(response.project.data)
         state.value = { ...initialWizardState, ...migratedData }
         currentProjectId.value = projectId
         saveToLocalStorage()
