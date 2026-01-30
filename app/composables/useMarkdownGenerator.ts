@@ -356,8 +356,8 @@ ${template.features.map(f => `  - ${f}`).join('\n')}
     if (hasModules) {
       content += `\n### ${isTemplateMode ? 'Modules إضافية' : 'Modules'}\n`
       state.frontendModules.forEach((mod) => {
-        const moduleTypeLine = mod.moduleType ? `\n> Module Type: ${mod.moduleType}` : ''
-        const paginationLine = mod.paginationType ? `\n> Pagination: ${mod.paginationType}` : ''
+        const moduleTypeLine = mod.moduleType && mod.moduleType !== 'none' ? `\n> Module Type: ${mod.moduleType}` : ''
+        const paginationLine = mod.paginationType && mod.paginationType !== 'none' ? `\n> Pagination: ${mod.paginationType}` : ''
         content += `
 #### ${mod.name}
 > ${mod.description || 'No description'}

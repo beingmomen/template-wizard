@@ -25,7 +25,7 @@ export type PermissionSystemType = 'role-based' | 'action-based' | 'resource-bas
 export type ExternalServiceType = 'AI' | 'Payment' | 'Auth' | 'Storage' | 'Email' | 'Analytics' | 'Other'
 export type PackageManager = 'pnpm' | 'npm' | 'yarn' | 'bun'
 export type FrontendMode = 'template' | 'custom'
-export type ModuleType = 'index-only' | 'crud-modal' | 'index-add-edit' | 'full-crud' | 'view-edit-combined'
+export type ModuleType = 'none' | 'index-only' | 'crud-modal' | 'index-add-edit' | 'full-crud' | 'view-edit-combined'
 export type PaginationType = 'backend' | 'frontend' | 'none'
 
 export type SharedComponentCategory = 'layout' | 'data' | 'feedback' | 'form' | 'navigation' | 'utility'
@@ -46,6 +46,7 @@ export const COMPONENT_CATEGORY_LABELS: Record<SharedComponentCategory, string> 
 }
 
 export const MODULE_TYPE_OPTIONS: { value: ModuleType, label: string, description: string }[] = [
+  { value: 'none', label: 'بدون نوع', description: 'صفحة فارغة بدون بنية محددة' },
   { value: 'index-only', label: 'قائمة فقط', description: 'صفحة عرض البيانات فقط (للقراءة)' },
   { value: 'crud-modal', label: 'CRUD عبر Modal', description: 'صفحة واحدة مع عمليات CRUD عبر نوافذ منبثقة' },
   { value: 'index-add-edit', label: 'قائمة + نموذج', description: 'صفحة قائمة + صفحة نموذج مشتركة للإضافة والتعديل' },
@@ -56,7 +57,7 @@ export const MODULE_TYPE_OPTIONS: { value: ModuleType, label: string, descriptio
 export const PAGINATION_TYPE_OPTIONS: { value: PaginationType, label: string, description: string }[] = [
   { value: 'backend', label: 'ترقيم من الخادم', description: 'Backend pagination' },
   { value: 'frontend', label: 'ترقيم في الواجهة', description: 'Frontend pagination (كل البيانات محملة)' },
-  { value: 'none', label: 'بدون ترقيم', description: 'عرض كل البيانات في الجدول' }
+  { value: 'none', label: 'بدون ترقيم', description: 'لا يوجد جدول أو ترقيم في هذه الصفحة' }
 ]
 
 export const COMMON_SHARED_COMPONENTS: SharedComponent[] = [

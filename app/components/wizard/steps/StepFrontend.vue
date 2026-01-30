@@ -53,7 +53,7 @@ const emptyModule = {
   basePath: '/',
   description: '',
   moduleType: null,
-  paginationType: 'backend',
+  paginationType: 'none',
   pages: []
 }
 
@@ -167,6 +167,7 @@ function generatePagesForModuleType(basePath, moduleName, moduleType) {
     ]
   }
 
+  if (moduleType === 'none') return []
   return templates[moduleType] || []
 }
 
@@ -457,7 +458,7 @@ function addAllFromCategory(category) {
               </UFormField>
               <UFormField label="نوع الترقيم (Pagination)">
                 <USelectMenu
-                  :model-value="module.paginationType || 'backend'"
+                  :model-value="module.paginationType || 'none'"
                   :items="PAGINATION_TYPE_OPTIONS"
                   placeholder="اختر نوع الترقيم"
                   value-key="value"
