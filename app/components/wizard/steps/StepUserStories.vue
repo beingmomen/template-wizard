@@ -121,10 +121,13 @@ function removeStory(userIndex, storyIndex) {
               :key="storyIndex"
               class="flex gap-2"
             >
-              <UInput
+              <UTextarea
                 :model-value="story.story"
                 :placeholder="`كـ ${item.userType || 'مستخدم'} أريد ... لأجل ...`"
                 class="flex-1"
+                :rows="2"
+                :maxrows="10"
+                autoresize
                 @update:model-value="updateStory(index, storyIndex, $event)"
               />
               <UButton

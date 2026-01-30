@@ -430,9 +430,12 @@ function addAllFromCategory(category) {
             </div>
 
             <UFormField label="وصف الـ Module">
-              <UInput
+              <UTextarea
                 :model-value="module.description"
                 placeholder="صفحات إدارة المنتجات"
+                :rows="2"
+                :maxrows="10"
+                autoresize
                 @update:model-value="updateModule(moduleIndex, 'description', $event)"
               />
             </UFormField>
@@ -550,10 +553,13 @@ function addAllFromCategory(category) {
                     label="وصف الصفحة"
                     required
                   >
-                    <UInput
+                    <UTextarea
                       :model-value="page.description"
                       placeholder="عرض قائمة المنتجات مع البحث والفلترة"
                       size="sm"
+                      :rows="2"
+                      :maxrows="10"
+                      autoresize
                       @update:model-value="updatePageInModule(moduleIndex, pageIndex, 'description', $event)"
                     />
                   </UFormField>

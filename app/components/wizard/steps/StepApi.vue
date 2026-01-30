@@ -240,9 +240,12 @@ function addCommonParams(groupIndex, endpointIndex, type) {
           </div>
 
           <UFormField label="وصف المجموعة">
-            <UInput
+            <UTextarea
               :model-value="group.description"
               placeholder="APIs الخاصة بإدارة المنتجات"
+              :rows="2"
+              :maxrows="10"
+              autoresize
               @update:model-value="updateGroup(groupIndex, 'description', $event)"
             />
           </UFormField>
@@ -317,10 +320,13 @@ function addCommonParams(groupIndex, endpointIndex, type) {
                 </div>
 
                 <UFormField label="الوصف" required>
-                  <UInput
+                  <UTextarea
                     :model-value="endpoint.description"
                     placeholder="وصف ما يفعله هذا الـ endpoint"
                     size="sm"
+                    :rows="2"
+                    :maxrows="10"
+                    autoresize
                     @update:model-value="updateEndpointInGroup(groupIndex, epIndex, 'description', $event)"
                   />
                 </UFormField>

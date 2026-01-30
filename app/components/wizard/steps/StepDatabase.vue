@@ -280,9 +280,12 @@ function executeTableDelete() {
               </UFormField>
 
               <UFormField label="وصف الجدول">
-                <UInput
+                <UTextarea
                   :model-value="table.description"
                   placeholder="مثال: جدول المستخدمين"
+                  :rows="2"
+                  :maxrows="10"
+                  autoresize
                   @update:model-value="updateTableDescription(tableIndex, $event)"
                 />
               </UFormField>
