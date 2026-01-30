@@ -60,7 +60,7 @@ This project uses **Nuxt UI**. You MUST use the MCP template setup to create the
 `
     }
 
-    content += `3. After setup completes, copy the downloaded files (CLAUDE.md, .mcp.json, fix.md, .env.example) to the project root
+    content += `3. After setup completes, copy the downloaded files (CLAUDE.md, ${state.includeMcpJson ? '.mcp.json, ' : ''}fix.md, .env.example) to the project root
 4. Then proceed with implementing the specification in project-spec.md
 
 > **WARNING**: DO NOT manually create nuxt.config.ts, package.json, or install Nuxt/Nuxt UI manually.
@@ -80,7 +80,7 @@ This project uses a **monorepo** architecture. You MUST:
 - Create all applications inside \`apps/\` directory (e.g., \`apps/web\`, \`apps/api\`)
 - Create shared packages inside \`packages/\` directory (e.g., \`packages/shared\`)
 - **DO NOT** create project files directly in the root folder
-- Root should only contain: workspace config, CLAUDE.md, .mcp.json, fix.md, package.json (workspace root)
+- Root should only contain: workspace config, CLAUDE.md, ${state.includeMcpJson ? '.mcp.json, ' : ''}fix.md, package.json (workspace root)
 
 \`\`\`
 project-root/
@@ -89,8 +89,7 @@ project-root/
 │   └── api/          # Backend application
 ├── packages/
 │   └── shared/       # Shared utilities/types
-├── CLAUDE.md
-├── .mcp.json
+├── CLAUDE.md${state.includeMcpJson ? '\n├── .mcp.json' : ''}
 ├── fix.md
 ├── package.json      # Workspace root
 └── ...

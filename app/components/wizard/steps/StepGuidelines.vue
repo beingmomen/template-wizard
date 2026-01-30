@@ -157,6 +157,31 @@ async function copyPrompt() {
 
     <USeparator />
 
+    <div class="space-y-3">
+      <div class="flex items-center gap-2">
+        <UIcon
+          name="i-lucide-file-json"
+          class="text-xl text-primary-500"
+        />
+        <h3 class="font-semibold text-gray-900 dark:text-white">
+          إعدادات التصدير
+        </h3>
+      </div>
+
+      <div class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+        <UCheckbox
+          :model-value="state.includeMcpJson"
+          label="تضمين ملف .mcp.json في المجلد المُصدَّر"
+          @update:model-value="updateField('includeMcpJson', $event)"
+        />
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 mr-7">
+          إذا كان لديك MCP servers مثبتة مسبقاً في بيئة Claude Code، يمكنك تعطيل هذا الخيار
+        </p>
+      </div>
+    </div>
+
+    <USeparator />
+
     <div class="space-y-4">
       <div class="flex items-center gap-2">
         <UIcon

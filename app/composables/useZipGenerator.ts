@@ -143,7 +143,9 @@ After testing, provide a summary:
     const zip = new JSZip()
     const projectName = state.projectNameTechnical || 'project'
 
-    zip.file('.mcp.json', generateMcpJson(state))
+    if (state.includeMcpJson) {
+      zip.file('.mcp.json', generateMcpJson(state))
+    }
     zip.file('CLAUDE.md', generateClaudeMd(state))
     zip.file('project-spec.md', generateMarkdown(state))
     zip.file('fix.md', generateFixMd())

@@ -11,7 +11,8 @@ export const guidelinesSchema = z.object({
     warning: z.string().min(1, 'نص التحذير مطلوب'),
     enabled: z.boolean(),
     isDefault: z.boolean().optional()
-  })).optional()
+  })).optional(),
+  includeMcpJson: z.boolean()
 })
 
 export const defaultWarnings = [

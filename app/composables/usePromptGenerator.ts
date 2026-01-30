@@ -11,17 +11,18 @@ export function usePromptGenerator() {
     const projectName = state.projectName || state.projectNameTechnical || 'Project'
     const hasNuxtUi = isNuxtUiProject(state)
 
+    const hasMcpJson = state.includeMcpJson
+
     let prompt = `I'm starting a new project called "${projectName}". Please read the attached project files:
 
 📁 Files to read (in order):
 1. CLAUDE.md - Contains MANDATORY instructions you MUST follow
-2. project-spec.md - Full project specification
-3. .mcp.json - Available MCP servers for this project
+2. project-spec.md - Full project specification${hasMcpJson ? '\n3. .mcp.json - Available MCP servers for this project' : ''}
 
 ⚠️ CRITICAL REQUIREMENTS:
 - Follow ALL instructions in CLAUDE.md exactly
 - Use ONLY the specified versions (check the version table carefully)
-- **MCP FIRST**: Follow the MCP FIRST checklist above — query MCP servers before creating ANY file, do NOT rely on training data for framework APIs
+- **MCP FIRST**: ${!hasMcpJson ? 'Use ALL available MCP servers and plugins in your Claude Code environment — query them' : 'Follow the MCP FIRST checklist above — query MCP servers'} before creating ANY file, do NOT rely on training data for framework APIs
 - Create fix.md to log any issues you encounter and solve
 - After project setup is complete, create README.md with setup and run instructions
 - Never duplicate ENV variables between files
@@ -81,6 +82,7 @@ DO NOT manually create nuxt.config.ts or install Nuxt UI - the MCP template hand
   const generateClaudeCommand = (state: WizardState): string => {
     const projectName = state.projectName || state.projectNameTechnical || 'Project'
     const hasNuxtUi = isNuxtUiProject(state)
+    const hasMcpJson = state.includeMcpJson
 
     let command = `---
 description: Initialize and implement ${projectName} from specification
@@ -91,7 +93,7 @@ Read the following files in order:
 2. project-spec.md - Full project specification
 
 ## Before Starting
-- Verify .mcp.json contains required MCP servers
+${hasMcpJson ? '- Verify .mcp.json contains required MCP servers' : '- Use the MCP servers and plugins already available in your Claude Code environment for documentation lookups'}
 - Confirm you understand version requirements in CLAUDE.md
 - Create fix.md file for logging issues
 
@@ -104,7 +106,7 @@ Read the following files in order:
         : null
 
       command += `1. **FIRST**: Run /nuxt-ui-remote:setup_project_with_template${templateName ? ` and select the **${templateName}** template` : ' and select the appropriate template'}
-2. Copy CLAUDE.md, .mcp.json, fix.md, .env.example to the new project root
+2. Copy CLAUDE.md, ${hasMcpJson ? '.mcp.json, ' : ''}fix.md, .env.example to the new project root
 3. Implement features phase by phase as defined in project-spec.md
 4. After implementation, create README.md with complete setup and run instructions
 5. Log any issues encountered in fix.md`
@@ -119,7 +121,7 @@ Read the following files in order:
     command += `
 
 ## Critical Rules
-- **MCP FIRST**: Follow the MCP FIRST checklist above — query MCP servers before creating ANY file, do NOT rely on training data for framework APIs
+- **MCP FIRST**: ${!hasMcpJson ? 'Use ALL available MCP servers and plugins in your environment — query them' : 'Follow the MCP FIRST checklist above — query MCP servers'} before creating ANY file, do NOT rely on training data for framework APIs
 - NEVER use versions different from specification
 - ALWAYS create README.md with setup and run instructions after project is ready
 - ALWAYS log issues in fix.md with date, problem, and solution

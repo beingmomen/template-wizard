@@ -554,6 +554,7 @@ export interface WizardState {
 
   // MCP Servers Configuration
   selectedMcpServers: string[]
+  includeMcpJson: boolean
 
   // Project Status
   projectStatus: ProjectStatus
@@ -691,6 +692,7 @@ export const initialWizardState: WizardState = {
 
   // MCP Servers (auto-selected based on tech stack)
   selectedMcpServers: ['nuxt-remote', 'nuxt-ui-remote'],
+  includeMcpJson: false,
 
   // Project Status
   projectStatus: 'planning'
