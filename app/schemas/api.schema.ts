@@ -29,6 +29,7 @@ const apiGroupSchema = z.object({
 export const apiSchema = z.object({
   apiStyle: z.enum(['REST', 'GraphQL', 'tRPC']),
   routePrefix: z.string().optional(),
+  communicationInterfaces: z.array(z.enum(['http-api', 'local-ipc', 'tauri-commands', 'cli-flags', 'file-based'])).optional(),
   endpoints: z.array(endpointSchema).optional(),
   apiGroups: z.array(apiGroupSchema).optional()
 }).refine(

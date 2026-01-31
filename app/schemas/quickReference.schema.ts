@@ -24,7 +24,10 @@ export const quickReferenceSchema = z.object({
   targetUsers: z.string().min(5, 'حدد المستخدمين المستهدفين'),
   targetUserType: z.enum(['individuals', 'companies', 'both']).default('both'),
   targetUserLevel: z.enum(['beginner', 'intermediate', 'advanced']).default('beginner'),
-  primaryLanguage: z.enum(['ar', 'en', 'both']).default('ar')
+  primaryLanguage: z.enum(['ar', 'en', 'both']).default('ar'),
+  projectNature: z.enum(['product', 'tool', 'library', 'service', 'automation']).default('product'),
+  runtimeTargets: z.array(z.enum(['web', 'desktop', 'mobile', 'cli', 'system'])).min(1, 'اختر هدف تشغيل واحد على الأقل'),
+  intelligenceLevel: z.enum(['none', 'rules-based', 'ai-assisted', 'ai-core']).default('none')
 })
 
 export type QuickReferenceData = z.infer<typeof quickReferenceSchema>

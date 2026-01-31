@@ -18,6 +18,9 @@ export const dependenciesSchema = z.object({
   packageManager: z.enum(['pnpm', 'npm', 'yarn', 'bun']).optional().default('pnpm'),
   backendDependencies: z.array(z.string().min(1)).min(1, 'أضف مكتبة واحدة على الأقل'),
   frontendDependencies: z.array(z.string().min(1)).min(1, 'أضف مكتبة واحدة على الأقل'),
+  aiDependencies: z.array(z.string()).optional(),
+  systemDependencies: z.array(z.string()).optional(),
+  buildDependencies: z.array(z.string()).optional(),
   environmentVariables: z.array(envVariableSchema).min(1, 'أضف متغير واحد على الأقل'),
   seedData: z.string().optional()
 })
@@ -50,4 +53,35 @@ export const commonFrontendDeps = [
   'pinia',
   '@vueuse/nuxt',
   '@nuxt/image'
+]
+
+export const commonAiDeps = [
+  'openai',
+  '@anthropic-ai/sdk',
+  '@google/generative-ai',
+  'langchain',
+  'ollama',
+  'transformers',
+  'onnxruntime-node',
+  'whisper-node'
+]
+
+export const commonSystemDeps = [
+  '@tauri-apps/api',
+  '@tauri-apps/cli',
+  'electron',
+  'node-pty',
+  'node-hid',
+  'systeminformation',
+  'robotjs'
+]
+
+export const commonBuildDeps = [
+  'vite',
+  'esbuild',
+  'rollup',
+  'webpack',
+  'tsup',
+  'unbuild',
+  'pkg'
 ]

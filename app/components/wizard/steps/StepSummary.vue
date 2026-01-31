@@ -1,6 +1,12 @@
 <script setup>
+import { projectTypeOptions } from '~/schemas/quickReference.schema'
+import { intelligenceLevelOptions } from '~/types/wizard.types'
+
 const { state } = useWizardState()
 const copied = ref(false)
+
+const projectTypeLabel = computed(() => projectTypeOptions.find(o => o.value === state.value.projectType)?.labelAr || state.value.projectType)
+const intelligenceLevelLabel = computed(() => intelligenceLevelOptions.find(o => o.value === state.value.intelligenceLevel)?.label || '')
 
 async function copy(text) {
   try {
@@ -211,6 +217,44 @@ function handleCopy() {
       title="ملخص للمناقشة مع AI"
       description="انسخ هذا الملخص وشاركه مع ChatGPT أو Claude لمناقشة تصميم قاعدة البيانات قبل المتابعة للخطوة التالية."
     />
+
+    <!-- Key Decisions -->
+    <div class="flex flex-wrap gap-2">
+      <UBadge
+        variant="subtle"
+        color="primary"
+      >
+        {{ projectTypeLabel }}
+      </UBadge>
+      <UBadge
+        variant="subtle"
+        color="info"
+      >
+        {{ state.architecture }}
+      </UBadge>
+      <UBadge
+        v-if="state.intelligenceLevel !== 'none'"
+        variant="subtle"
+        color="warning"
+      >
+        AI: {{ intelligenceLevelLabel }}
+      </UBadge>
+      <UBadge
+        v-for="rt in state.runtimeTargets"
+        :key="rt"
+        variant="subtle"
+        color="neutral"
+      >
+        {{ rt }}
+      </UBadge>
+      <UBadge
+        v-if="state.techStack.database"
+        variant="subtle"
+        color="success"
+      >
+        {{ state.techStack.database }}
+      </UBadge>
+    </div>
 
     <div class="flex justify-end">
       <UButton

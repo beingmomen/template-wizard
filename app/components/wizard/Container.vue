@@ -1,10 +1,19 @@
 <script setup>
+import { getStepComponent } from '~/config/stepRegistry'
+
 const { state, currentStep, visibleSteps, isFirstStep, isLastStep, nextStep, prevStep, isAutoSaving, lastSaved, currentProjectId, updateField, deleteProject, softDeleteProject } = useWizardState()
 const { validateStep } = useStepValidation()
 const { downloadMarkdown } = useMarkdownGenerator()
 const { downloadZip } = useZipGenerator()
 const toast = useToast()
 const isDownloadingZip = ref(false)
+
+const currentStepComponent = computed(() => {
+  const stepId = visibleSteps.value[currentStep.value]?.id
+  if (stepId === undefined) return null
+  const loader = getStepComponent(stepId)
+  return loader ? defineAsyncComponent(loader) : null
+})
 
 const stepperItems = computed(() =>
   visibleSteps.value.map((step, index) => ({
@@ -26,7 +35,7 @@ const projectUrl = computed(() => {
 })
 
 async function handleNext() {
-  const result = validateStep(currentStep.value)
+  const result = await validateStep(currentStep.value)
 
   if (!result.valid) {
     validationErrors.value = result.errors
@@ -158,7 +167,10 @@ async function handleDeleteProject() {
       <p class="text-gray-600 dark:text-gray-400">
         املأ البيانات لإنشاء ملف مواصفات جاهز للاستخدام مع Claude
       </p>
-      <div v-if="currentProjectId" class="flex items-center justify-center gap-2">
+      <div
+        v-if="currentProjectId"
+        class="flex items-center justify-center gap-2"
+      >
         <UButton
           size="xs"
           variant="ghost"
@@ -192,13 +204,30 @@ async function handleDeleteProject() {
     <UCard>
       <template #header>
         <div class="flex items-center gap-3">
-          <UIcon :name="visibleSteps[currentStep].icon" class="w-6 h-6 text-primary-500" />
+          <UIcon
+            :name="visibleSteps[currentStep].icon"
+            class="w-6 h-6 text-primary-500"
+          />
           <div>
-            <h2 class="text-lg font-semibold">{{ visibleSteps[currentStep].titleAr }}</h2>
-            <p class="text-sm text-gray-500">الخطوة {{ currentStep + 1 }} من {{ visibleSteps.length }}</p>
+            <h2 class="text-lg font-semibold">
+              {{ visibleSteps[currentStep].titleAr }}
+            </h2>
+            <p class="text-sm text-gray-500">
+              الخطوة {{ currentStep + 1 }} من {{ visibleSteps.length }}
+            </p>
           </div>
         </div>
       </template>
+
+      <!-- Context Hint for Conditional Steps -->
+      <UAlert
+        v-if="visibleSteps[currentStep]?.contextHint"
+        color="info"
+        variant="subtle"
+        icon="i-lucide-info"
+        :description="visibleSteps[currentStep].contextHint"
+        class="mb-4"
+      />
 
       <!-- Validation Errors -->
       <UAlert
@@ -210,24 +239,21 @@ async function handleDeleteProject() {
       >
         <template #description>
           <ul class="list-disc list-inside">
-            <li v-for="error in validationErrors" :key="error">{{ error }}</li>
+            <li
+              v-for="error in validationErrors"
+              :key="error"
+            >
+              {{ error }}
+            </li>
           </ul>
         </template>
       </UAlert>
 
-      <!-- Dynamic Step Content (based on step ID) -->
-      <WizardStepsStepQuickReference v-if="visibleSteps[currentStep]?.id === 0" />
-      <WizardStepsStepUserStories v-else-if="visibleSteps[currentStep]?.id === 1" />
-      <WizardStepsStepPermissions v-else-if="visibleSteps[currentStep]?.id === 2" />
-      <WizardStepsStepTechnical v-else-if="visibleSteps[currentStep]?.id === 3" />
-      <WizardStepsStepSummary v-else-if="visibleSteps[currentStep]?.id === 4" />
-      <WizardStepsStepDatabase v-else-if="visibleSteps[currentStep]?.id === 5" />
-      <WizardStepsStepSummaryWithDB v-else-if="visibleSteps[currentStep]?.id === 6" />
-      <WizardStepsStepApi v-else-if="visibleSteps[currentStep]?.id === 7" />
-      <WizardStepsStepFrontend v-else-if="visibleSteps[currentStep]?.id === 8" />
-      <WizardStepsStepFeatures v-else-if="visibleSteps[currentStep]?.id === 9" />
-      <WizardStepsStepDependencies v-else-if="visibleSteps[currentStep]?.id === 10" />
-      <WizardStepsStepGuidelines v-else-if="visibleSteps[currentStep]?.id === 11" />
+      <!-- Dynamic Step Content -->
+      <component
+        :is="currentStepComponent"
+        v-if="currentStepComponent"
+      />
 
       <!-- Navigation Footer -->
       <template #footer>
@@ -286,7 +312,10 @@ async function handleDeleteProject() {
           variant="subtle"
           class="flex items-center gap-1"
         >
-          <UIcon name="i-lucide-loader-2" class="w-3 h-3 animate-spin" />
+          <UIcon
+            name="i-lucide-loader-2"
+            class="w-3 h-3 animate-spin"
+          />
           <span>جارٍ الحفظ في قاعدة البيانات...</span>
         </UBadge>
         <UBadge
@@ -295,7 +324,10 @@ async function handleDeleteProject() {
           variant="subtle"
           class="flex items-center gap-1"
         >
-          <UIcon name="i-lucide-cloud-check" class="w-3 h-3" />
+          <UIcon
+            name="i-lucide-cloud-check"
+            class="w-3 h-3"
+          />
           <span>تم الحفظ تلقائياً</span>
         </UBadge>
       </div>
@@ -312,16 +344,24 @@ async function handleDeleteProject() {
         <div class="p-6">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-              <UIcon name="i-lucide-alert-triangle" class="w-5 h-5 text-red-500" />
+              <UIcon
+                name="i-lucide-alert-triangle"
+                class="w-5 h-5 text-red-500"
+              />
             </div>
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">تأكيد الحذف</h3>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+              تأكيد الحذف
+            </h3>
           </div>
 
           <p class="text-gray-600 dark:text-gray-400">
             هل أنت متأكد من {{ isHardDelete ? 'حذف' : 'أرشفة' }} المشروع
             <strong class="text-gray-900 dark:text-white">{{ state.projectName || 'بدون اسم' }}</strong>؟
           </p>
-          <p class="mt-2 text-sm" :class="isHardDelete ? 'text-red-500' : 'text-yellow-600'">
+          <p
+            class="mt-2 text-sm"
+            :class="isHardDelete ? 'text-red-500' : 'text-yellow-600'"
+          >
             {{ isHardDelete
               ? 'سيتم حذف المشروع نهائياً ولا يمكن استرجاعه.'
               : 'سيتم نقل المشروع للأرشيف ويمكن استرجاعه لاحقاً.'

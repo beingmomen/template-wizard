@@ -26,7 +26,10 @@ export function usePromptGenerator() {
 - Create fix.md to log any issues you encounter and solve
 - After project setup is complete, create README.md with setup and run instructions
 - Never duplicate ENV variables between files
-- NO COMMENTS in code files`
+- NO COMMENTS in code files
+- **Project Nature**: ${state.projectNature}
+- **Runtime Targets**: ${state.runtimeTargets?.join(', ') || 'web'}
+- **Intelligence Level**: ${state.intelligenceLevel}`
 
     if (state.architecture === 'monorepo') {
       prompt += `

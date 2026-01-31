@@ -1,7 +1,8 @@
 import { nanoid } from 'nanoid'
 import { useDebounceFn } from '@vueuse/core'
-import { initialWizardState, WIZARD_STEPS, ALL_PROJECT_TYPES } from '~/types/wizard.types'
-import type { WizardState, WizardStep, ProjectType } from '~/types/wizard.types'
+import { initialWizardState, WIZARD_STEPS } from '~/types/wizard.types'
+import type { WizardState, WizardStep } from '~/types/wizard.types'
+import { needsFrontend as _needsFrontend, needsBackend as _needsBackend, needsDatabase as _needsDatabase, needsAI as _needsAI, needsDesktopSystem as _needsDesktopSystem } from '~/utils/projectCapabilities'
 
 const STORAGE_KEY = 'project-template-wizard-state'
 const DEVICE_ID_KEY = 'wizard-device-id'
@@ -17,29 +18,18 @@ export function useWizardState() {
   const isLoading = useState<boolean>('wizard-is-loading', () => false)
   const skipNextAutoSave = useState<boolean>('wizard-skip-auto-save', () => false)
 
-  // Computed: Get visible steps based on project type
   const visibleSteps = computed<WizardStep[]>(() => {
-    const projectType = state.value.projectType || 'fullstack'
-    return WIZARD_STEPS.filter(step => {
-      if (!step.visibleFor) return true
-      return step.visibleFor.includes(projectType)
+    return WIZARD_STEPS.filter((step) => {
+      if (!step.visibleWhen) return true
+      return step.visibleWhen(state.value)
     })
   })
 
-  // Helper: Check if project needs frontend
-  const needsFrontend = computed(() =>
-    ['fullstack', 'frontend-only', 'chrome-extension'].includes(state.value.projectType)
-  )
-
-  // Helper: Check if project needs backend
-  const needsBackend = computed(() =>
-    ['fullstack', 'backend-only'].includes(state.value.projectType)
-  )
-
-  // Helper: Check if project needs database
-  const needsDatabase = computed(() =>
-    ['fullstack', 'backend-only'].includes(state.value.projectType)
-  )
+  const needsFrontend = computed(() => _needsFrontend(state.value))
+  const needsBackend = computed(() => _needsBackend(state.value))
+  const needsDatabase = computed(() => _needsDatabase(state.value))
+  const needsAI = computed(() => _needsAI(state.value))
+  const needsDesktopSystem = computed(() => _needsDesktopSystem(state.value))
 
   // Helper: Check if a specific step is visible
   const isStepVisible = (stepId: number): boolean => {
@@ -215,6 +205,16 @@ export function useWizardState() {
       }))
     }
 
+    if (!data.projectNature) data.projectNature = 'product'
+    if (!data.runtimeTargets) data.runtimeTargets = ['web']
+    if (!data.intelligenceLevel) data.intelligenceLevel = 'none'
+    if (!data.aiConfiguration) data.aiConfiguration = { domains: [], models: [], supportedLanguages: [], hardwarePreference: 'any' }
+    if (!data.desktopSystemCapabilities) data.desktopSystemCapabilities = { fileSystemAccess: false, microphone: false, camera: false, globalShortcuts: false, backgroundExecution: false, autoStart: false }
+    if (!data.communicationInterfaces) data.communicationInterfaces = ['http-api']
+    if (!data.aiDependencies) data.aiDependencies = []
+    if (!data.systemDependencies) data.systemDependencies = []
+    if (!data.buildDependencies) data.buildDependencies = []
+
     return data
   }
 
@@ -284,7 +284,7 @@ export function useWizardState() {
   }
 
   // Save to MongoDB Cloud (manual save - kept for compatibility)
-  const saveToCloud = async (): Promise<{ success: boolean; projectId?: string; error?: string }> => {
+  const saveToCloud = async (): Promise<{ success: boolean, projectId?: string, error?: string }> => {
     if (!currentProjectId.value) {
       const newProjectId = await createProject()
       if (newProjectId) {
@@ -312,7 +312,7 @@ export function useWizardState() {
   }
 
   // Load from MongoDB Cloud (kept for compatibility)
-  const loadFromCloud = async (projectId: string): Promise<{ success: boolean; error?: string }> => {
+  const loadFromCloud = async (projectId: string): Promise<{ success: boolean, error?: string }> => {
     const success = await loadProject(projectId)
     if (success) {
       return { success: true }
@@ -478,6 +478,8 @@ export function useWizardState() {
     needsFrontend,
     needsBackend,
     needsDatabase,
+    needsAI,
+    needsDesktopSystem,
     isStepVisible,
     getVisibleStepIndex,
     getStepIdFromVisibleIndex,

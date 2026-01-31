@@ -16,6 +16,9 @@ This file provides MANDATORY guidance for AI assistants working on this project.
 - **Project Name**: ${state.projectName}
 - **Technical Name**: ${state.projectNameTechnical}
 - **Type**: ${state.projectType}
+- **Nature**: ${state.projectNature}
+- **Runtime Targets**: ${state.runtimeTargets?.join(', ') || 'web'}
+- **Intelligence Level**: ${state.intelligenceLevel}
 - **Size**: ${state.projectSize}
 
 `
@@ -228,6 +231,27 @@ ${server.checkInstructions}
       content += `- Use TypeScript everywhere
 - Define proper types for all functions and components
 - Avoid using 'any' type
+`
+    }
+
+    if (state.intelligenceLevel !== 'none') {
+      content += `
+### AI Integration Guidelines
+- Intelligence Level: ${state.intelligenceLevel}
+- Always handle AI API failures gracefully with fallback behavior
+- Implement rate limiting for external AI API calls
+- Cache AI responses where appropriate to reduce costs
+- Log AI model inputs/outputs for debugging (exclude in production)
+`
+    }
+
+    if (state.runtimeTargets?.some(t => ['desktop', 'system'].includes(t))) {
+      content += `
+### Desktop/System Guidelines
+- Handle file system permissions gracefully
+- Implement proper error handling for system-level operations
+- Test on multiple operating systems if applicable
+- Use secure IPC communication between processes
 `
     }
 

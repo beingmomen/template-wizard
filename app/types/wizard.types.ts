@@ -28,6 +28,12 @@ export type FrontendMode = 'template' | 'custom'
 export type ModuleType = 'none' | 'index-only' | 'crud-modal' | 'index-add-edit' | 'full-crud' | 'view-edit-combined'
 export type PaginationType = 'backend' | 'frontend' | 'none'
 
+export type ProjectNature = 'product' | 'tool' | 'library' | 'service' | 'automation'
+export type RuntimeTarget = 'web' | 'desktop' | 'mobile' | 'cli' | 'system'
+export type IntelligenceLevel = 'none' | 'rules-based' | 'ai-assisted' | 'ai-core'
+export type CommunicationInterface = 'http-api' | 'local-ipc' | 'tauri-commands' | 'cli-flags' | 'file-based'
+export type HardwarePreference = 'gpu-preferred' | 'cpu-only' | 'any'
+
 export type SharedComponentCategory = 'layout' | 'data' | 'feedback' | 'form' | 'navigation' | 'utility'
 
 export interface SharedComponent {
@@ -252,6 +258,29 @@ export const NUXT_UI_TEMPLATES: NuxtUiTemplate[] = [
     githubUrl: 'https://github.com/nuxt-ui-templates/starter-vue'
   }
 ]
+
+export interface AIModel {
+  name: string
+  isOpenSource: boolean
+  isAPI: boolean
+  offlineSupport: boolean
+}
+
+export interface AIConfiguration {
+  domains: string[]
+  models: AIModel[]
+  supportedLanguages: string[]
+  hardwarePreference: HardwarePreference
+}
+
+export interface DesktopSystemCapabilities {
+  fileSystemAccess: boolean
+  microphone: boolean
+  camera: boolean
+  globalShortcuts: boolean
+  backgroundExecution: boolean
+  autoStart: boolean
+}
 
 export interface Permission {
   id: string
@@ -492,6 +521,9 @@ export const TECH_TO_MCP_MAP: Record<string, string[]> = {
 export interface WizardState {
   // Step 1: Quick Reference & Project Overview
   projectType: ProjectType
+  projectNature: ProjectNature
+  runtimeTargets: RuntimeTarget[]
+  intelligenceLevel: IntelligenceLevel
   projectSize: ProjectSize
   projectName: string
   projectNameTechnical: string
@@ -524,6 +556,7 @@ export interface WizardState {
   // Step 6: API Design
   apiStyle: ApiStyle
   routePrefix: string
+  communicationInterfaces: CommunicationInterface[]
   endpoints: Endpoint[]
   apiGroups: ApiGroup[]
 
@@ -541,10 +574,17 @@ export interface WizardState {
   edgeCases: EdgeCase[]
   implementationPhases: Phase[]
 
+  // AI Configuration
+  aiConfiguration: AIConfiguration
+  desktopSystemCapabilities: DesktopSystemCapabilities
+
   // Step 9: Dependencies & Environment
   packageManager: PackageManager
   backendDependencies: string[]
   frontendDependencies: string[]
+  aiDependencies: string[]
+  systemDependencies: string[]
+  buildDependencies: string[]
   environmentVariables: EnvVariable[]
   seedData: string
 
@@ -567,7 +607,8 @@ export interface WizardStep {
   titleAr: string
   icon: string
   description?: string
-  visibleFor?: ProjectType[]
+  contextHint?: string
+  visibleWhen?: (state: WizardState) => boolean
 }
 
 export const ALL_PROJECT_TYPES: ProjectType[] = [
@@ -577,13 +618,15 @@ export const ALL_PROJECT_TYPES: ProjectType[] = [
 export const WIZARD_STEPS: WizardStep[] = [
   { id: 0, title: 'Overview', titleAr: 'نظرة عامة', icon: 'i-lucide-rocket' },
   { id: 1, title: 'User Stories', titleAr: 'قصص المستخدم', icon: 'i-lucide-users' },
-  { id: 2, title: 'Permissions', titleAr: 'الصلاحيات', icon: 'i-lucide-shield', visibleFor: ['fullstack', 'backend-only'] },
+  { id: 2, title: 'Permissions', titleAr: 'الصلاحيات', icon: 'i-lucide-shield', contextHint: 'ظهرت هذه الخطوة لأن نوع المشروع يتضمن Backend', visibleWhen: s => ['fullstack', 'backend-only'].includes(s.projectType) },
   { id: 3, title: 'Technical', titleAr: 'التقنيات', icon: 'i-lucide-settings' },
+  { id: 12, title: 'AI Configuration', titleAr: 'إعدادات الذكاء الاصطناعي', icon: 'i-lucide-brain', contextHint: 'ظهرت هذه الخطوة لأنك اخترت مستوى ذكاء اصطناعي غير «بدون ذكاء»', visibleWhen: s => s.intelligenceLevel !== 'none' },
+  { id: 13, title: 'Desktop/System', titleAr: 'سطح المكتب والنظام', icon: 'i-lucide-monitor', contextHint: 'ظهرت هذه الخطوة لأنك اخترت «سطح المكتب» أو «نظام» كبيئة تشغيل', visibleWhen: s => s.runtimeTargets?.some(t => ['desktop', 'system'].includes(t)) },
   { id: 4, title: 'Summary', titleAr: 'ملخص للمناقشة', icon: 'i-lucide-file-text' },
-  { id: 5, title: 'Database', titleAr: 'قاعدة البيانات', icon: 'i-lucide-database', visibleFor: ['fullstack', 'backend-only', 'cli-tool', 'integration'] },
-  { id: 6, title: 'Summary 2', titleAr: 'ملخص مع قاعدة البيانات', icon: 'i-lucide-file-text', visibleFor: ['fullstack', 'backend-only', 'cli-tool', 'integration'] },
-  { id: 7, title: 'API', titleAr: 'الـ API', icon: 'i-lucide-network', visibleFor: ['fullstack', 'backend-only', 'library', 'integration'] },
-  { id: 8, title: 'Frontend', titleAr: 'الواجهة', icon: 'i-lucide-layout', visibleFor: ['fullstack', 'frontend-only', 'chrome-extension', 'integration'] },
+  { id: 5, title: 'Database', titleAr: 'قاعدة البيانات', icon: 'i-lucide-database', contextHint: 'ظهرت لأن نوع المشروع يتضمن قاعدة بيانات', visibleWhen: s => ['fullstack', 'backend-only', 'cli-tool', 'integration'].includes(s.projectType) },
+  { id: 6, title: 'Summary 2', titleAr: 'ملخص مع قاعدة البيانات', icon: 'i-lucide-file-text', visibleWhen: s => ['fullstack', 'backend-only', 'cli-tool', 'integration'].includes(s.projectType) },
+  { id: 7, title: 'Communication', titleAr: 'واجهات التواصل', icon: 'i-lucide-network', contextHint: 'ظهرت لأن المشروع يحتاج واجهات تواصل', visibleWhen: s => ['fullstack', 'backend-only', 'library', 'integration'].includes(s.projectType) || s.runtimeTargets?.some(t => ['desktop', 'cli', 'system'].includes(t)) },
+  { id: 8, title: 'Frontend', titleAr: 'الواجهة', icon: 'i-lucide-layout', contextHint: 'ظهرت لأن المشروع يتضمن واجهة أمامية', visibleWhen: s => ['fullstack', 'frontend-only', 'chrome-extension', 'integration'].includes(s.projectType) || s.runtimeTargets?.some(t => ['web', 'mobile', 'desktop'].includes(t)) },
   { id: 9, title: 'Features', titleAr: 'المميزات', icon: 'i-lucide-list-checks' },
   { id: 10, title: 'Dependencies', titleAr: 'المتطلبات', icon: 'i-lucide-package' },
   { id: 11, title: 'Guidelines', titleAr: 'إرشادات التطوير', icon: 'i-lucide-shield-check' }
@@ -592,6 +635,9 @@ export const WIZARD_STEPS: WizardStep[] = [
 export const initialWizardState: WizardState = {
   // Step 1
   projectType: 'fullstack',
+  projectNature: 'product',
+  runtimeTargets: ['web'],
+  intelligenceLevel: 'none',
   projectSize: 'medium',
   projectName: '',
   projectNameTechnical: '',
@@ -647,6 +693,7 @@ export const initialWizardState: WizardState = {
   // Step 5
   apiStyle: 'REST',
   routePrefix: '/api',
+  communicationInterfaces: ['http-api'],
   endpoints: [],
   apiGroups: [],
 
@@ -664,10 +711,29 @@ export const initialWizardState: WizardState = {
   edgeCases: [],
   implementationPhases: [],
 
+  // AI Configuration
+  aiConfiguration: {
+    domains: [],
+    models: [],
+    supportedLanguages: [],
+    hardwarePreference: 'any'
+  },
+  desktopSystemCapabilities: {
+    fileSystemAccess: false,
+    microphone: false,
+    camera: false,
+    globalShortcuts: false,
+    backgroundExecution: false,
+    autoStart: false
+  },
+
   // Step 8
   packageManager: 'pnpm',
   backendDependencies: ['express', 'mysql2', 'jsonwebtoken', 'bcryptjs', 'zod', 'cors', 'dotenv'],
   frontendDependencies: ['nuxt', '@nuxt/ui', '@sidebase/nuxt-auth', '@pinia/nuxt'],
+  aiDependencies: [],
+  systemDependencies: [],
+  buildDependencies: [],
   environmentVariables: [
     { name: 'PORT', description: 'Server port', required: true, example: '3001' },
     { name: 'DB_HOST', description: 'Database host', required: true, example: 'localhost' },
@@ -697,3 +763,49 @@ export const initialWizardState: WizardState = {
   // Project Status
   projectStatus: 'planning'
 }
+
+export const projectNatureOptions: { value: ProjectNature, label: string, description: string, icon: string }[] = [
+  { value: 'product', label: 'منتج', description: 'تطبيق يُقدم كمنتج للمستخدمين', icon: 'i-lucide-box' },
+  { value: 'tool', label: 'أداة', description: 'أداة داخلية لحل مشكلة محددة', icon: 'i-lucide-wrench' },
+  { value: 'library', label: 'مكتبة', description: 'مكتبة برمجية يستخدمها مطورون آخرون', icon: 'i-lucide-library' },
+  { value: 'service', label: 'خدمة', description: 'خدمة تعمل في الخلفية أو كـ API', icon: 'i-lucide-server' },
+  { value: 'automation', label: 'أتمتة', description: 'نظام أتمتة لمهام متكررة', icon: 'i-lucide-bot' }
+]
+
+export const runtimeTargetOptions: { value: RuntimeTarget, label: string, description: string, icon: string }[] = [
+  { value: 'web', label: 'ويب', description: 'يعمل في المتصفح', icon: 'i-lucide-globe' },
+  { value: 'desktop', label: 'سطح المكتب', description: 'تطبيق سطح مكتب (Electron/Tauri)', icon: 'i-lucide-monitor' },
+  { value: 'mobile', label: 'موبايل', description: 'تطبيق موبايل (iOS/Android)', icon: 'i-lucide-smartphone' },
+  { value: 'cli', label: 'سطر الأوامر', description: 'أداة سطر أوامر (Terminal)', icon: 'i-lucide-terminal' },
+  { value: 'system', label: 'نظام', description: 'خدمة نظام تعمل في الخلفية', icon: 'i-lucide-cpu' }
+]
+
+export const intelligenceLevelOptions: { value: IntelligenceLevel, label: string, description: string, icon: string }[] = [
+  { value: 'none', label: 'بدون ذكاء', description: 'لا يستخدم أي نوع من الذكاء الاصطناعي', icon: 'i-lucide-circle-off' },
+  { value: 'rules-based', label: 'قواعد ثابتة', description: 'منطق مبني على قواعد محددة مسبقاً', icon: 'i-lucide-list-tree' },
+  { value: 'ai-assisted', label: 'مساعد بالذكاء', description: 'يستخدم الذكاء الاصطناعي كميزة مساعدة', icon: 'i-lucide-sparkles' },
+  { value: 'ai-core', label: 'ذكاء أساسي', description: 'الذكاء الاصطناعي هو جوهر المنتج', icon: 'i-lucide-brain' }
+]
+
+export const communicationInterfaceOptions: { value: CommunicationInterface, label: string, description: string, icon: string }[] = [
+  { value: 'http-api', label: 'HTTP API', description: 'REST أو GraphQL عبر HTTP', icon: 'i-lucide-network' },
+  { value: 'local-ipc', label: 'IPC محلي', description: 'تواصل بين العمليات المحلية', icon: 'i-lucide-cable' },
+  { value: 'tauri-commands', label: 'أوامر Tauri', description: 'أوامر Tauri للتواصل مع النظام', icon: 'i-lucide-terminal-square' },
+  { value: 'cli-flags', label: 'أعلام CLI', description: 'معاملات سطر الأوامر', icon: 'i-lucide-flag' },
+  { value: 'file-based', label: 'ملفات', description: 'تواصل عبر الملفات (stdin/stdout/pipes)', icon: 'i-lucide-file-input' }
+]
+
+export const aiDomainOptions: { value: string, label: string, description: string, icon: string }[] = [
+  { value: 'speech-to-text', label: 'تحويل الصوت لنص', description: 'مثل Whisper', icon: 'i-lucide-mic' },
+  { value: 'text-to-text', label: 'معالجة النصوص', description: 'مثل GPT, Claude', icon: 'i-lucide-text' },
+  { value: 'vision', label: 'رؤية حاسوبية', description: 'مثل YOLO, OpenCV', icon: 'i-lucide-eye' },
+  { value: 'audio', label: 'معالجة الصوت', description: 'توليد ومعالجة الصوت', icon: 'i-lucide-headphones' },
+  { value: 'multimodal', label: 'متعدد الوسائط', description: 'نص + صورة + صوت', icon: 'i-lucide-layers' },
+  { value: 'other', label: 'أخرى', description: 'مجال آخر غير مذكور', icon: 'i-lucide-plus' }
+]
+
+export const hardwarePreferenceOptions: { value: HardwarePreference, label: string, description: string, icon: string }[] = [
+  { value: 'gpu-preferred', label: 'GPU مفضل', description: 'أفضل للنماذج الثقيلة (صور، فيديو، نماذج محلية)', icon: 'i-lucide-zap' },
+  { value: 'cpu-only', label: 'CPU فقط', description: 'كافٍ للنماذج الخفيفة أو استخدام API فقط', icon: 'i-lucide-cpu' },
+  { value: 'any', label: 'أي عتاد', description: 'المشروع يتكيف مع العتاد المتاح', icon: 'i-lucide-settings' }
+]

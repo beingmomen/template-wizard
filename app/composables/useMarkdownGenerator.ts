@@ -1,5 +1,6 @@
-import type { WizardState, ProjectType } from '~/types/wizard.types'
+import type { WizardState, ProjectType, ProjectNature, IntelligenceLevel } from '~/types/wizard.types'
 import { NUXT_UI_TEMPLATES } from '~/types/wizard.types'
+import { needsFrontend as _needsFrontend, needsBackend as _needsBackend, needsDatabase as _needsDatabase, needsAI as _needsAI, needsDesktopSystem as _needsDesktopSystem } from '~/utils/projectCapabilities'
 
 const projectTypeLabels: Record<ProjectType, string> = {
   'fullstack': 'Fullstack Application',
@@ -11,16 +12,22 @@ const projectTypeLabels: Record<ProjectType, string> = {
   'integration': 'Integration Service'
 }
 
+const projectNatureLabels: Record<ProjectNature, string> = {
+  product: 'منتج',
+  tool: 'أداة',
+  library: 'مكتبة',
+  service: 'خدمة',
+  automation: 'أتمتة'
+}
+
+const intelligenceLevelLabels: Record<IntelligenceLevel, string> = {
+  'none': 'بدون ذكاء',
+  'rules-based': 'قواعد ثابتة',
+  'ai-assisted': 'مساعد بالذكاء',
+  'ai-core': 'ذكاء أساسي'
+}
+
 export function useMarkdownGenerator() {
-  const needsFrontend = (projectType: ProjectType) =>
-    ['fullstack', 'frontend-only', 'chrome-extension'].includes(projectType)
-
-  const needsBackend = (projectType: ProjectType) =>
-    ['fullstack', 'backend-only'].includes(projectType)
-
-  const needsDatabase = (projectType: ProjectType) =>
-    ['fullstack', 'backend-only'].includes(projectType)
-
   // Generate Quick Reference section
   const generateQuickReference = (state: WizardState): string => {
     const projectType = state.projectType || 'fullstack'
@@ -31,9 +38,13 @@ export function useMarkdownGenerator() {
 | الحقل | القيمة |
 |-------|--------|
 | نوع المشروع | ${projectTypeLabels[projectType]} |
+| طبيعة المشروع | ${projectNatureLabels[state.projectNature] || state.projectNature} |
+| بيئات التشغيل | ${state.runtimeTargets?.join(', ') || 'web'} |
+| مستوى الذكاء | ${intelligenceLevelLabels[state.intelligenceLevel] || state.intelligenceLevel} |
 | حجم المشروع | ${state.projectSize === 'small' ? 'صغير' : state.projectSize === 'medium' ? 'متوسط' : 'كبير'} |
 | الاسم التقني | ${state.projectNameTechnical} |
-| البنية | ${state.architecture} |`
+| البنية | ${state.architecture} |
+| واجهات التواصل | ${state.communicationInterfaces?.join(', ') || 'http-api'} |`
 
     if (state.techStack.frontend) content += `\n| Frontend | ${formatTechWithVersion(state.techVersions, state.techStack.frontend)} |`
     if (state.techStack.backend) content += `\n| Backend | ${formatTechWithVersion(state.techVersions, state.techStack.backend)} |`
@@ -492,6 +503,70 @@ ${ec.handling}
     return content
   }
 
+  const generateAIConfiguration = (state: WizardState): string => {
+    const ai = state.aiConfiguration
+    if (!ai) return ''
+
+    let content = `## AI Configuration | إعدادات الذكاء الاصطناعي
+
+### Intelligence Level: ${intelligenceLevelLabels[state.intelligenceLevel]}
+
+### AI Domains
+\`\`\`yaml
+${ai.domains.map(d => `- ${d}`).join('\n')}
+\`\`\`
+
+### AI Models
+\`\`\`yaml
+${ai.models.map(m => `- name: ${m.name}
+  openSource: ${m.isOpenSource}
+  api: ${m.isAPI}
+  offline: ${m.offlineSupport}`).join('\n')}
+\`\`\``
+
+    if (ai.supportedLanguages?.length > 0) {
+      content += `
+
+### Supported Languages
+\`\`\`
+${ai.supportedLanguages.join(', ')}
+\`\`\``
+    }
+
+    content += `
+
+### Hardware Preference: ${ai.hardwarePreference}`
+
+    return content
+  }
+
+  const generateDesktopSystemCapabilities = (state: WizardState): string => {
+    const caps = state.desktopSystemCapabilities
+    if (!caps) return ''
+
+    const enabledCaps = Object.entries(caps)
+      .filter(([_, v]) => v)
+      .map(([k]) => k)
+
+    if (enabledCaps.length === 0) return ''
+
+    const labelMap: Record<string, string> = {
+      fileSystemAccess: 'الوصول لنظام الملفات',
+      microphone: 'الميكروفون',
+      camera: 'الكاميرا',
+      globalShortcuts: 'اختصارات لوحة المفاتيح',
+      backgroundExecution: 'العمل في الخلفية',
+      autoStart: 'التشغيل التلقائي'
+    }
+
+    return `## Desktop/System Capabilities | إمكانيات النظام
+
+### Enabled Capabilities
+\`\`\`yaml
+${enabledCaps.map(c => `- ${labelMap[c] || c}`).join('\n')}
+\`\`\``
+  }
+
   // Generate Dependencies
   const generateDependencies = (state: WizardState): string => {
     const hasBackend = state.backendDependencies?.length > 0
@@ -539,6 +614,33 @@ ${installCmd} ${state.frontendDependencies.join(' ')}
 ${state.frontendDependencies.map(d => `    "${d}": "latest"`).join(',\n')}
   }
 }
+\`\`\``
+    }
+
+    if (state.aiDependencies?.length > 0) {
+      content += `
+
+### AI Dependencies
+\`\`\`bash
+${installCmd} ${state.aiDependencies.join(' ')}
+\`\`\``
+    }
+
+    if (state.systemDependencies?.length > 0) {
+      content += `
+
+### System Dependencies
+\`\`\`bash
+${installCmd} ${state.systemDependencies.join(' ')}
+\`\`\``
+    }
+
+    if (state.buildDependencies?.length > 0) {
+      content += `
+
+### Build Dependencies
+\`\`\`bash
+${installCmd} -D ${state.buildDependencies.join(' ')}
 \`\`\``
     }
 
@@ -598,8 +700,6 @@ ${enabledWarnings.map((w, i) => `${i + 1}. ${w.warning}`).join('\n')}
   // Generate full markdown
   const generateMarkdown = (state: WizardState): string => {
     const sections: string[] = []
-    const projectType = state.projectType || 'fullstack'
-
     // Basic sections
     sections.push(generateQuickReference(state))
     sections.push(generateProjectOverview(state))
@@ -611,16 +711,28 @@ ${enabledWarnings.map((w, i) => `${i + 1}. ${w.warning}`).join('\n')}
 
     sections.push(generateTechnicalRequirements(state))
 
+    // AI Configuration section
+    if (_needsAI(state)) {
+      const aiSection = generateAIConfiguration(state)
+      if (aiSection) sections.push(aiSection)
+    }
+
+    // Desktop/System Capabilities section
+    if (_needsDesktopSystem(state)) {
+      const desktopSection = generateDesktopSystemCapabilities(state)
+      if (desktopSection) sections.push(desktopSection)
+    }
+
     // External services section
     const externalServices = generateExternalServices(state)
     if (externalServices) sections.push(externalServices)
 
     // Database section (only if project needs database)
-    if (needsDatabase(projectType) && state.tables?.length > 0) {
+    if (_needsDatabase(state) && state.tables?.length > 0) {
       sections.push(generateDatabaseDesign(state))
     }
 
-    // API section (only if project needs backend)
+    // API section
     const apiSection = generateApiDesign(state)
     if (apiSection) sections.push(apiSection)
 
