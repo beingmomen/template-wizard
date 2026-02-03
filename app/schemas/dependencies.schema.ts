@@ -1,4 +1,6 @@
 import { z } from 'zod'
+import type { WizardState } from '~/types/wizard.types'
+import { needsBackend, needsFrontend, needsEnvVars } from '~/utils/projectCapabilities'
 
 const envVariableSchema = z.object({
   name: z.string().min(1, 'اسم المتغير مطلوب').regex(/^[A-Z_][A-Z0-9_]*$/, 'استخدم حروف كبيرة وشرطات سفلية فقط'),
@@ -24,6 +26,29 @@ export const dependenciesSchema = z.object({
   environmentVariables: z.array(envVariableSchema).min(1, 'أضف متغير واحد على الأقل'),
   seedData: z.string().optional()
 })
+
+export function createDependenciesSchema(state: WizardState) {
+  const _needsBackend = needsBackend(state)
+  const _needsFrontend = needsFrontend(state)
+  const _needsEnvVars = needsEnvVars(state)
+
+  return z.object({
+    packageManager: z.enum(['pnpm', 'npm', 'yarn', 'bun']).optional().default('pnpm'),
+    backendDependencies: _needsBackend
+      ? z.array(z.string().min(1)).min(1, 'أضف مكتبة واحدة على الأقل')
+      : z.array(z.string()).optional(),
+    frontendDependencies: _needsFrontend
+      ? z.array(z.string().min(1)).min(1, 'أضف مكتبة واحدة على الأقل')
+      : z.array(z.string()).optional(),
+    aiDependencies: z.array(z.string()).optional(),
+    systemDependencies: z.array(z.string()).optional(),
+    buildDependencies: z.array(z.string()).optional(),
+    environmentVariables: _needsEnvVars
+      ? z.array(envVariableSchema).min(1, 'أضف متغير واحد على الأقل')
+      : z.array(envVariableSchema).optional(),
+    seedData: z.string().optional()
+  })
+}
 
 export type DependenciesData = z.infer<typeof dependenciesSchema>
 

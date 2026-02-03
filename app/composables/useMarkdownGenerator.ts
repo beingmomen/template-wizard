@@ -1,6 +1,6 @@
 import type { WizardState, ProjectType, ProjectNature, IntelligenceLevel } from '~/types/wizard.types'
 import { NUXT_UI_TEMPLATES } from '~/types/wizard.types'
-import { needsFrontend as _needsFrontend, needsBackend as _needsBackend, needsDatabase as _needsDatabase, needsAI as _needsAI, needsDesktopSystem as _needsDesktopSystem } from '~/utils/projectCapabilities'
+import { needsFrontend as _needsFrontend, needsBackend as _needsBackend, needsDatabase as _needsDatabase, needsAuth as _needsAuth, needsAI as _needsAI, needsDesktopSystem as _needsDesktopSystem, needsPorts as _needsPorts, needsEnvVars as _needsEnvVars } from '~/utils/projectCapabilities'
 
 const projectTypeLabels: Record<ProjectType, string> = {
   'fullstack': 'Fullstack Application',
@@ -48,14 +48,14 @@ export function useMarkdownGenerator() {
 
     if (state.techStack.frontend) content += `\n| Frontend | ${formatTechWithVersion(state.techVersions, state.techStack.frontend)} |`
     if (state.techStack.backend) content += `\n| Backend | ${formatTechWithVersion(state.techVersions, state.techStack.backend)} |`
-    if (state.techStack.database) content += `\n| Database | ${formatTechWithVersion(state.techVersions, state.techStack.database)} |`
-    if (state.techStack.auth) content += `\n| Auth | ${state.techStack.auth} |`
+    if (state.techStack.database && state.techStack.database !== 'None') content += `\n| Database | ${formatTechWithVersion(state.techVersions, state.techStack.database)} |`
+    if (state.techStack.auth && state.techStack.auth !== 'None') content += `\n| Auth | ${state.techStack.auth} |`
     if (state.techStack.runtime) content += `\n| Runtime | ${formatTechWithVersion(state.techVersions, state.techStack.runtime)} |`
     if (state.techStack.uiLibrary) content += `\n| UI Library | ${formatTechWithVersion(state.techVersions, state.techStack.uiLibrary)} |`
-    if (state.techStack.frontendPort) content += `\n| Frontend Port | ${state.techStack.frontendPort} |`
-    if (state.techStack.port) content += `\n| Backend Port | ${state.techStack.port} |`
+    if (_needsPorts(state) && state.techStack.frontendPort) content += `\n| Frontend Port | ${state.techStack.frontendPort} |`
+    if (_needsPorts(state) && state.techStack.port) content += `\n| Backend Port | ${state.techStack.port} |`
     if (state.packageManager) content += `\n| Package Manager | ${state.packageManager} |`
-    if (state.multiTenancy?.enabled) content += `\n| Multi-tenancy | ${state.multiTenancy.model} (${state.multiTenancy.isolationLevel}) |`
+    if (state.multiTenancy?.enabled && _needsDatabase(state)) content += `\n| Multi-tenancy | ${state.multiTenancy.model} (${state.multiTenancy.isolationLevel}) |`
 
     return content
   }
@@ -180,16 +180,16 @@ ${service.envVars?.length > 0 ? `Environment Variables: [${service.envVars.join(
     const techStackLines = []
     if (state.techStack.frontend) techStackLines.push(`Frontend: ${formatTechWithVersion(state.techVersions, state.techStack.frontend)}`)
     if (state.techStack.backend) techStackLines.push(`Backend: ${formatTechWithVersion(state.techVersions, state.techStack.backend)}`)
-    if (state.techStack.database) techStackLines.push(`Database: ${formatTechWithVersion(state.techVersions, state.techStack.database)}`)
-    if (state.techStack.auth) techStackLines.push(`Authentication: ${state.techStack.auth}`)
+    if (state.techStack.database && state.techStack.database !== 'None') techStackLines.push(`Database: ${formatTechWithVersion(state.techVersions, state.techStack.database)}`)
+    if (state.techStack.auth && state.techStack.auth !== 'None') techStackLines.push(`Authentication: ${state.techStack.auth}`)
     if (state.techStack.runtime) techStackLines.push(`Runtime: ${formatTechWithVersion(state.techVersions, state.techStack.runtime)}`)
     if (state.techStack.uiLibrary) techStackLines.push(`UI Library: ${formatTechWithVersion(state.techVersions, state.techStack.uiLibrary)}`)
     if (state.techStack.orm) techStackLines.push(`ORM: ${state.techStack.orm}`)
     if (state.techStack.fileUpload) techStackLines.push(`File Upload: ${state.techStack.fileUpload}`)
     if (state.techStack.pdfGeneration) techStackLines.push(`PDF Generation: ${state.techStack.pdfGeneration}`)
     if (state.techStack.email) techStackLines.push(`Email: ${state.techStack.email}`)
-    if (state.techStack.frontendPort) techStackLines.push(`Frontend Port: ${state.techStack.frontendPort}`)
-    if (state.techStack.port) techStackLines.push(`Backend Port: ${state.techStack.port}`)
+    if (_needsPorts(state) && state.techStack.frontendPort) techStackLines.push(`Frontend Port: ${state.techStack.frontendPort}`)
+    if (_needsPorts(state) && state.techStack.port) techStackLines.push(`Backend Port: ${state.techStack.port}`)
 
     let content = `## Technical Requirements | المتطلبات التقنية
 
@@ -209,7 +209,7 @@ ${techStackLines.join('\n')}
 > **ملاحظة هامة**: في بنية Monorepo، يجب إنشاء التطبيقات داخل مجلد \`apps/\` والحزم المشتركة داخل مجلد \`packages/\`. لا تنشئ ملفات المشروع مباشرة في المجلد الرئيسي.`
     }
 
-    if (state.multiTenancy?.enabled) {
+    if (state.multiTenancy?.enabled && _needsDatabase(state)) {
       content += `
 
 ### Multi-tenancy
@@ -649,6 +649,8 @@ ${installCmd} -D ${state.buildDependencies.join(' ')}
 
   // Generate Environment Variables
   const generateEnvironmentVariables = (state: WizardState): string => {
+    if (!_needsEnvVars(state) || !state.environmentVariables?.length) return ''
+
     let content = `## 12. Environment Variables | متغيرات البيئة
 
 ### .env
@@ -661,7 +663,7 @@ ${installCmd} -D ${state.buildDependencies.join(' ')}
 
     content += `\`\`\``
 
-    if (state.seedData) {
+    if (_needsDatabase(state) && state.seedData) {
       content += `
 
 ## 13. Seed Data | بيانات تجريبية

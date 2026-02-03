@@ -62,6 +62,21 @@ function removeLanguage(index) {
   updated.splice(index, 1)
   updateNestedField('aiConfiguration', 'supportedLanguages', updated)
 }
+
+watch(() => state.value.aiConfiguration.models, (models) => {
+  if (!models?.length) return
+  const hasLocalModel = models.some(m => m.offlineSupport && !m.isAPI)
+  if (hasLocalModel && state.value.aiConfiguration.hardwarePreference === 'any') {
+    updateNestedField('aiConfiguration', 'hardwarePreference', 'cpu-preferred')
+  }
+}, { deep: true })
+
+function onToggleIsAPI(index, value) {
+  updateModel(index, 'isAPI', value)
+  if (!value) {
+    updateModel(index, 'offlineSupport', true)
+  }
+}
 </script>
 
 <template>
@@ -158,7 +173,7 @@ function removeLanguage(index) {
             <UCheckbox
               :model-value="model.isAPI"
               label="عبر API"
-              @update:model-value="updateModel(index, 'isAPI', $event)"
+              @update:model-value="onToggleIsAPI(index, $event)"
             />
             <UCheckbox
               :model-value="model.offlineSupport"

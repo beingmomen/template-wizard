@@ -32,7 +32,7 @@ export type ProjectNature = 'product' | 'tool' | 'library' | 'service' | 'automa
 export type RuntimeTarget = 'web' | 'desktop' | 'mobile' | 'cli' | 'system'
 export type IntelligenceLevel = 'none' | 'rules-based' | 'ai-assisted' | 'ai-core'
 export type CommunicationInterface = 'http-api' | 'local-ipc' | 'tauri-commands' | 'cli-flags' | 'file-based'
-export type HardwarePreference = 'gpu-preferred' | 'cpu-only' | 'any'
+export type HardwarePreference = 'gpu-preferred' | 'cpu-preferred' | 'cpu-only' | 'any'
 
 export type SharedComponentCategory = 'layout' | 'data' | 'feedback' | 'form' | 'navigation' | 'utility'
 
@@ -618,13 +618,13 @@ export const ALL_PROJECT_TYPES: ProjectType[] = [
 export const WIZARD_STEPS: WizardStep[] = [
   { id: 0, title: 'Overview', titleAr: 'نظرة عامة', icon: 'i-lucide-rocket' },
   { id: 1, title: 'User Stories', titleAr: 'قصص المستخدم', icon: 'i-lucide-users' },
-  { id: 2, title: 'Permissions', titleAr: 'الصلاحيات', icon: 'i-lucide-shield', contextHint: 'ظهرت هذه الخطوة لأن نوع المشروع يتضمن Backend', visibleWhen: s => ['fullstack', 'backend-only'].includes(s.projectType) },
+  { id: 2, title: 'Permissions', titleAr: 'الصلاحيات', icon: 'i-lucide-shield', contextHint: 'ظهرت هذه الخطوة لأن نوع المشروع يتضمن Backend ومصادقة', visibleWhen: s => ['fullstack', 'backend-only'].includes(s.projectType) && s.techStack?.auth !== 'None' },
   { id: 3, title: 'Technical', titleAr: 'التقنيات', icon: 'i-lucide-settings' },
   { id: 12, title: 'AI Configuration', titleAr: 'إعدادات الذكاء الاصطناعي', icon: 'i-lucide-brain', contextHint: 'ظهرت هذه الخطوة لأنك اخترت مستوى ذكاء اصطناعي غير «بدون ذكاء»', visibleWhen: s => s.intelligenceLevel !== 'none' },
   { id: 13, title: 'Desktop/System', titleAr: 'سطح المكتب والنظام', icon: 'i-lucide-monitor', contextHint: 'ظهرت هذه الخطوة لأنك اخترت «سطح المكتب» أو «نظام» كبيئة تشغيل', visibleWhen: s => s.runtimeTargets?.some(t => ['desktop', 'system'].includes(t)) },
   { id: 4, title: 'Summary', titleAr: 'ملخص للمناقشة', icon: 'i-lucide-file-text' },
-  { id: 5, title: 'Database', titleAr: 'قاعدة البيانات', icon: 'i-lucide-database', contextHint: 'ظهرت لأن نوع المشروع يتضمن قاعدة بيانات', visibleWhen: s => ['fullstack', 'backend-only', 'cli-tool', 'integration'].includes(s.projectType) },
-  { id: 6, title: 'Summary 2', titleAr: 'ملخص مع قاعدة البيانات', icon: 'i-lucide-file-text', visibleWhen: s => ['fullstack', 'backend-only', 'cli-tool', 'integration'].includes(s.projectType) },
+  { id: 5, title: 'Database', titleAr: 'قاعدة البيانات', icon: 'i-lucide-database', contextHint: 'ظهرت لأن نوع المشروع يتضمن قاعدة بيانات', visibleWhen: s => ['fullstack', 'backend-only', 'cli-tool', 'integration'].includes(s.projectType) && s.techStack?.database !== 'None' },
+  { id: 6, title: 'Summary 2', titleAr: 'ملخص مع قاعدة البيانات', icon: 'i-lucide-file-text', visibleWhen: s => ['fullstack', 'backend-only', 'cli-tool', 'integration'].includes(s.projectType) && s.techStack?.database !== 'None' },
   { id: 7, title: 'Communication', titleAr: 'واجهات التواصل', icon: 'i-lucide-network', contextHint: 'ظهرت لأن المشروع يحتاج واجهات تواصل', visibleWhen: s => ['fullstack', 'backend-only', 'library', 'integration'].includes(s.projectType) || s.runtimeTargets?.some(t => ['desktop', 'cli', 'system'].includes(t)) },
   { id: 8, title: 'Frontend', titleAr: 'الواجهة', icon: 'i-lucide-layout', contextHint: 'ظهرت لأن المشروع يتضمن واجهة أمامية', visibleWhen: s => ['fullstack', 'frontend-only', 'chrome-extension', 'integration'].includes(s.projectType) || s.runtimeTargets?.some(t => ['web', 'mobile', 'desktop'].includes(t)) },
   { id: 9, title: 'Features', titleAr: 'المميزات', icon: 'i-lucide-list-checks' },
@@ -806,6 +806,7 @@ export const aiDomainOptions: { value: string, label: string, description: strin
 
 export const hardwarePreferenceOptions: { value: HardwarePreference, label: string, description: string, icon: string }[] = [
   { value: 'gpu-preferred', label: 'GPU مفضل', description: 'أفضل للنماذج الثقيلة (صور، فيديو، نماذج محلية)', icon: 'i-lucide-zap' },
-  { value: 'cpu-only', label: 'CPU فقط', description: 'كافٍ للنماذج الخفيفة أو استخدام API فقط', icon: 'i-lucide-cpu' },
+  { value: 'cpu-preferred', label: 'CPU مفضل', description: 'CPU مفضل مع GPU اختياري للنماذج المحلية', icon: 'i-lucide-cpu' },
+  { value: 'cpu-only', label: 'CPU فقط', description: 'كافٍ للنماذج الخفيفة أو استخدام API فقط', icon: 'i-lucide-chip' },
   { value: 'any', label: 'أي عتاد', description: 'المشروع يتكيف مع العتاد المتاح', icon: 'i-lucide-settings' }
 ]

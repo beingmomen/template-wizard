@@ -2,7 +2,7 @@ import { nanoid } from 'nanoid'
 import { useDebounceFn } from '@vueuse/core'
 import { initialWizardState, WIZARD_STEPS } from '~/types/wizard.types'
 import type { WizardState, WizardStep } from '~/types/wizard.types'
-import { needsFrontend as _needsFrontend, needsBackend as _needsBackend, needsDatabase as _needsDatabase, needsAI as _needsAI, needsDesktopSystem as _needsDesktopSystem } from '~/utils/projectCapabilities'
+import { needsFrontend as _needsFrontend, needsBackend as _needsBackend, needsDatabase as _needsDatabase, needsAuth as _needsAuth, needsAI as _needsAI, needsDesktopSystem as _needsDesktopSystem, needsPorts as _needsPorts, needsEnvVars as _needsEnvVars, needsHttpApi as _needsHttpApi, isFullyLocal as _isFullyLocal } from '~/utils/projectCapabilities'
 
 const STORAGE_KEY = 'project-template-wizard-state'
 const DEVICE_ID_KEY = 'wizard-device-id'
@@ -28,8 +28,13 @@ export function useWizardState() {
   const needsFrontend = computed(() => _needsFrontend(state.value))
   const needsBackend = computed(() => _needsBackend(state.value))
   const needsDatabase = computed(() => _needsDatabase(state.value))
+  const needsAuth = computed(() => _needsAuth(state.value))
   const needsAI = computed(() => _needsAI(state.value))
   const needsDesktopSystem = computed(() => _needsDesktopSystem(state.value))
+  const needsPorts = computed(() => _needsPorts(state.value))
+  const needsEnvVars = computed(() => _needsEnvVars(state.value))
+  const needsHttpApi = computed(() => _needsHttpApi(state.value))
+  const fullyLocal = computed(() => _isFullyLocal(state.value))
 
   // Helper: Check if a specific step is visible
   const isStepVisible = (stepId: number): boolean => {
@@ -478,8 +483,13 @@ export function useWizardState() {
     needsFrontend,
     needsBackend,
     needsDatabase,
+    needsAuth,
     needsAI,
     needsDesktopSystem,
+    needsPorts,
+    needsEnvVars,
+    needsHttpApi,
+    fullyLocal,
     isStepVisible,
     getVisibleStepIndex,
     getStepIdFromVisibleIndex,

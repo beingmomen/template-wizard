@@ -12,7 +12,7 @@ export const aiConfigurationSchema = z.object({
     domains: z.array(z.string().min(1)).min(1, 'أضف مجال واحد على الأقل'),
     models: z.array(aiModelSchema).min(1, 'أضف نموذج ذكاء واحد على الأقل'),
     supportedLanguages: z.array(z.string()),
-    hardwarePreference: z.enum(['gpu-preferred', 'cpu-only', 'any'])
+    hardwarePreference: z.enum(['gpu-preferred', 'cpu-preferred', 'cpu-only', 'any'])
   })
 })
 

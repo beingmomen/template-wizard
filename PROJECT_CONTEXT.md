@@ -61,7 +61,7 @@ project-template-wizard/
 │   │   ├── api.schema.ts                      # + communicationInterfaces
 │   │   ├── frontend.schema.ts
 │   │   ├── features.schema.ts
-│   │   ├── dependencies.schema.ts             # + aiDependencies, systemDependencies, buildDependencies
+│   │   ├── dependencies.schema.ts             # + aiDependencies, systemDependencies, buildDependencies + createDependenciesSchema(state) factory
 │   │   ├── guidelines.schema.ts
 │   │   ├── aiConfiguration.schema.ts          # جديد - إعدادات الذكاء الاصطناعي
 │   │   ├── desktopSystem.schema.ts            # جديد - إمكانيات سطح المكتب والنظام
@@ -102,10 +102,15 @@ Container.vue بيستخدم `defineAsyncComponent` و `<component :is>` لعر�
 دوال `needsX` اللي كانت مكررة في أكتر من composable اتنقلت كلها لـ `app/utils/projectCapabilities.ts`:
 - `needsFrontend(state)` - المشروع محتاج واجهة؟
 - `needsBackend(state)` - المشروع محتاج backend؟
-- `needsDatabase(state)` - المشروع محتاج قاعدة بيانات؟
+- `needsDatabase(state)` - المشروع محتاج قاعدة بيانات؟ (يرجع false لو database = 'None')
 - `needsAI(state)` - المشروع فيه ذكاء اصطناعي؟
 - `needsDesktopSystem(state)` - المشروع بيشتغل على سطح المكتب/النظام؟
 - `needsAPI(state)` - المشروع محتاج واجهة تواصل؟
+- `needsAuth(state)` - المشروع محتاج مصادقة؟ (يرجع false لو auth = 'None')
+- `needsPorts(state)` - المشروع محتاج منافذ؟ (web أو fullstack/backend-only)
+- `needsEnvVars(state)` - المشروع محتاج متغيرات بيئة؟ (backend أو خدمات خارجية أو AI عبر API)
+- `needsHttpApi(state)` - المشروع محتاج HTTP API؟
+- `isFullyLocal(state)` - المشروع محلي بالكامل؟ (بدون backend أو خدمات خارجية أو AI عبر API)
 
 ---
 
@@ -117,12 +122,12 @@ Container.vue بيستخدم `defineAsyncComponent` و `<component :is>` لعر�
 |---|--------|--------|---------------------------|
 | 0 | نظرة عامة (Overview) | `0` | دايماً |
 | 1 | قصص المستخدم (User Stories) | `1` | دايماً |
-| 2 | الصلاحيات (Permissions) | `2` | `projectType` = fullstack أو backend-only |
+| 2 | الصلاحيات (Permissions) | `2` | `projectType` = fullstack أو backend-only **و** `auth !== 'None'` |
 | 3 | التقنيات (Technical) | `3` | دايماً |
 | 4 | إعدادات الذكاء الاصطناعي (AI Config) | `12` | `intelligenceLevel` != 'none' |
 | 5 | إمكانيات النظام (Desktop/System) | `13` | `runtimeTargets` يشمل desktop أو system |
 | 6 | ملخص للمناقشة (Summary) | `4` | دايماً |
-| 7 | قاعدة البيانات (Database) | `5` | `projectType` = fullstack, backend-only, cli-tool, integration |
+| 7 | قاعدة البيانات (Database) | `5` | `projectType` = fullstack, backend-only, cli-tool, integration **و** `database !== 'None'` |
 | 8 | ملخص مع DB (Summary 2) | `6` | نفس Database |
 | 9 | التواصل (Communication) | `7` | `projectType` = fullstack, backend-only, library, integration أو `runtimeTargets` يشمل desktop, cli, system |
 | 10 | الواجهة (Frontend) | `8` | `projectType` = fullstack, frontend-only, chrome-extension, integration أو `runtimeTargets` يشمل web, mobile, desktop |
@@ -162,7 +167,7 @@ ProjectNature = 'product' | 'tool' | 'library' | 'service' | 'automation'
 RuntimeTarget = 'web' | 'desktop' | 'mobile' | 'cli' | 'system'
 IntelligenceLevel = 'none' | 'rules-based' | 'ai-assisted' | 'ai-core'
 CommunicationInterface = 'http-api' | 'local-ipc' | 'tauri-commands' | 'cli-flags' | 'file-based'
-HardwarePreference = 'gpu-preferred' | 'cpu-only' | 'any'
+HardwarePreference = 'gpu-preferred' | 'cpu-preferred' | 'cpu-only' | 'any'
 ```
 
 ### الحالة الكاملة WizardState
@@ -330,15 +335,25 @@ interface DevelopmentWarning { warning, enabled, isDefault }
 - `aiConfiguration.domains`: مصفوفة، عنصر واحد على الأقل
 - `aiConfiguration.models`: مصفوفة، نموذج واحد على الأقل (كل نموذج يتطلب name)
 - `aiConfiguration.supportedLanguages`: مصفوفة (اختيارية)
-- `aiConfiguration.hardwarePreference`: مطلوب ('gpu-preferred', 'cpu-only', 'any')
+- `aiConfiguration.hardwarePreference`: مطلوب ('gpu-preferred', 'cpu-preferred', 'cpu-only', 'any')
 
 ### الخطوة 13 - إمكانيات النظام
 - `desktopSystemCapabilities`: 6 حقول boolean (بدون validation مطلوب)
 
-### الخطوات 1-11
+### الخطوة 3 - التقنيات
+- `techStack.database`: يشمل خيار `'None'` (بدون قاعدة بيانات) — عند اختياره تختفي خطوات 5 و 6
+- `techStack.auth`: يشمل خيار `'None'` (بدون مصادقة) — عند اختياره تختفي خطوة 2
+
+### الخطوة 10 - المتطلبات (Conditional Validation)
+يستخدم factory function `createDependenciesSchema(state)` بدل schema ثابت:
+- `backendDependencies`: مطلوب (min 1) فقط لو `needsBackend(state)` — اختياري للباقي
+- `frontendDependencies`: مطلوب (min 1) فقط لو `needsFrontend(state)` — اختياري للباقي
+- `environmentVariables`: مطلوب (min 1) فقط لو `needsEnvVars(state)` — اختياري للباقي
+- `aiDependencies`, `systemDependencies`, `buildDependencies`: مصفوفات اختيارية دايماً
+
+### الخطوات 1-11 (باقي)
 نفس الـ validation القديم مع الإضافات التالية:
 - **الخطوة 7 (التواصل)**: `communicationInterfaces` مصفوفة اختيارية
-- **الخطوة 10 (المتطلبات)**: `aiDependencies`, `systemDependencies`, `buildDependencies` مصفوفات اختيارية
 
 ---
 
@@ -352,6 +367,14 @@ interface DevelopmentWarning { warning, enabled, isDefault }
 - `visibleSteps` - الخطوات المرئية حسب `visibleWhen` functions
 - `needsAI` - computed: المشروع فيه ذكاء اصطناعي
 - `needsDesktopSystem` - computed: المشروع بيشتغل على سطح المكتب/النظام
+- `needsFrontend` - computed: المشروع محتاج واجهة
+- `needsBackend` - computed: المشروع محتاج backend
+- `needsDatabase` - computed: المشروع محتاج قاعدة بيانات (false لو 'None')
+- `needsAuth` - computed: المشروع محتاج مصادقة (false لو 'None')
+- `needsPorts` - computed: المشروع محتاج منافذ
+- `needsEnvVars` - computed: المشروع محتاج متغيرات بيئة
+- `needsHttpApi` - computed: المشروع محتاج HTTP API
+- `fullyLocal` - computed: المشروع محلي بالكامل
 - `updateField(key, value)` - تحديث حقل
 - `updateNestedField(key, nestedKey, value)` - تحديث حقل متداخل
 - `nextStep()` / `prevStep()` / `goToStep(step)` - التنقل
@@ -377,6 +400,14 @@ interface DevelopmentWarning { warning, enabled, isDefault }
 - `downloadMarkdown(state)` - يحمّل كملف .md
 
 **الأقسام المولّدة**: Quick Reference (مع الأبعاد الجديدة)، نظرة عامة، قصص المستخدم، الصلاحيات، التقنيات، **إعدادات الذكاء الاصطناعي** (شرطي)، **إمكانيات النظام** (شرطي)، قاعدة البيانات، API، الواجهة، المميزات، المتطلبات (مع AI/System/Build deps)، متغيرات البيئة، إرشادات التطوير
+
+**Capability-gated output**: الأقسام بتظهر بشكل شرطي حسب القدرات:
+- صفوف قاعدة البيانات: تختفي لو `database = 'None'`
+- صفوف المصادقة: تختفي لو `auth = 'None'`
+- صفوف المنافذ: تختفي لو `!needsPorts(state)`
+- Multi-tenancy: يختفي لو `!needsDatabase(state)`
+- متغيرات البيئة: القسم كله يختفي لو `!needsEnvVars(state)`
+- Seed Data: يختفي لو `!needsDatabase(state)`
 
 ### useClaudeMdGenerator
 **الوظيفة**: توليد ملف `CLAUDE.md` بتعليمات AI
@@ -439,7 +470,7 @@ Response: { projects: [...], pagination: { page, limit, total, totalPages } }
 | `intelligenceLevelOptions` | 4 | مستوى الذكاء (بدون، قواعد، مساعد، أساسي) |
 | `communicationInterfaceOptions` | 5 | واجهات التواصل (HTTP API, IPC, Tauri, CLI, ملفات) |
 | `aiDomainOptions` | 6 | مجالات الذكاء (speech-to-text, text-to-text, vision, audio, multimodal, other) |
-| `hardwarePreferenceOptions` | 3 | تفضيل العتاد (GPU, CPU, أي) |
+| `hardwarePreferenceOptions` | 4 | تفضيل العتاد (GPU, CPU مفضل, CPU فقط, أي) |
 
 ### Common Dependencies
 | المصفوفة | عدد المكتبات | الاستخدام |
@@ -477,6 +508,26 @@ buildDependencies → []
 ```
 
 ده بيضمن إن المشاريع القديمة المحفوظة في localStorage أو MongoDB تتحمل بدون أخطاء.
+
+---
+
+## الظهور الشرطي على مستوى الحقول (Field-level Visibility)
+
+بالإضافة لإخفاء الخطوات كاملة عبر `visibleWhen`، فيه إخفاء شرطي داخل الخطوات نفسها:
+
+### StepTechnical.vue
+- حقول المنافذ (Ports): `v-if="needsPorts"` — تختفي للمشاريع اللي مش محتاجة ويب أو backend
+- Multi-tenancy: `v-if="needsBackend && state.techStack.database !== 'None'"` — يختفي بدون قاعدة بيانات
+
+### StepDependencies.vue
+- Backend Dependencies: `v-if="needsBackend"` — تختفي للمشاريع بدون backend
+- Frontend Dependencies: `v-if="needsFrontend"` — تختفي للمشاريع بدون واجهة
+- Seed Data: `v-if="needsDatabase"` — يختفي بدون قاعدة بيانات
+- الحد الأدنى لعدد التبعيات: يتغير حسب القدرات (0 للاختياري، 1 للمطلوب)
+
+### StepAIConfiguration.vue
+- تعيين تلقائي لتفضيل العتاد إلى `cpu-preferred` عند إضافة نماذج محلية (offlineSupport && !isAPI) وكان التفضيل `any`
+- تفعيل تلقائي لـ `offlineSupport` عند إلغاء `isAPI` لنموذج
 
 ---
 

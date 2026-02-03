@@ -102,6 +102,7 @@ export const backendOptions = [
 ]
 
 export const databaseOptions = [
+  { label: 'None - بدون قاعدة بيانات', value: 'None' },
   { label: 'MySQL', value: 'MySQL' },
   { label: 'PostgreSQL', value: 'PostgreSQL' },
   { label: 'MongoDB', value: 'MongoDB' },
@@ -111,6 +112,7 @@ export const databaseOptions = [
 ]
 
 export const authOptions = [
+  { label: 'None - بدون مصادقة', value: 'None' },
   { label: 'JWT', value: 'JWT' },
   { label: 'Session', value: 'Session' },
   { label: 'OAuth', value: 'OAuth' },

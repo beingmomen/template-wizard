@@ -111,7 +111,7 @@ const STEP_REGISTRY: Record<number, StepRegistryEntry> = {
   },
   10: {
     component: () => import('~/components/wizard/steps/StepDependencies.vue'),
-    schema: () => import('~/schemas/dependencies.schema').then(m => m.dependenciesSchema),
+    schema: state => import('~/schemas/dependencies.schema').then(m => m.createDependenciesSchema(state)),
     dataExtractor: state => ({
       backendDependencies: state.backendDependencies,
       frontendDependencies: state.frontendDependencies,

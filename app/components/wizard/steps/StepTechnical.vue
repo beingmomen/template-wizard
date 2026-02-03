@@ -45,6 +45,11 @@ const needsAuth = computed(() =>
   ['fullstack', 'backend-only'].includes(state.value.projectType)
 )
 
+const needsPorts = computed(() =>
+  state.value.runtimeTargets?.some(t => t === 'web')
+  || ['fullstack', 'backend-only'].includes(state.value.projectType)
+)
+
 const needsRuntime = computed(() =>
   ['cli-tool', 'library', 'backend-only'].includes(state.value.projectType)
 )
@@ -474,7 +479,7 @@ function getRelatedTechBadgeColor(tech) {
     </UFormField>
 
     <!-- Ports -->
-    <div v-if="needsFrontend || needsBackend" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div v-if="needsPorts" class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <UFormField v-if="needsFrontend" label="Frontend Port">
         <UInput
           :model-value="state.techStack.frontendPort || ''"
@@ -503,7 +508,7 @@ function getRelatedTechBadgeColor(tech) {
     <USeparator />
 
     <!-- Multi-tenancy -->
-    <div v-if="needsBackend" class="space-y-4">
+    <div v-if="needsBackend && state.techStack.database !== 'None'" class="space-y-4">
       <UFormField label="تعدد المستأجرين (Multi-tenancy)">
         <USwitch
           :model-value="state.multiTenancy.enabled"

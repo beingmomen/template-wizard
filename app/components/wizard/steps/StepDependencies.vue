@@ -1,7 +1,7 @@
 <script setup>
 import { commonBackendDeps, commonFrontendDeps, commonAiDeps, commonSystemDeps, commonBuildDeps, packageManagerOptions } from '~/schemas/dependencies.schema'
 
-const { state, updateField, needsAI, needsDesktopSystem } = useWizardState()
+const { state, updateField, needsAI, needsDesktopSystem, needsFrontend, needsBackend, needsDatabase } = useWizardState()
 
 const techSuggestions = computed(() => {
   const suggestions = []
@@ -58,7 +58,9 @@ function addDep(type) {
 
 // Remove dependency
 function removeDep(type, index) {
-  const minLength = ['aiDependencies', 'systemDependencies', 'buildDependencies'].includes(type) ? 0 : 1
+  let minLength = 0
+  if (type === 'backendDependencies' && needsBackend.value) minLength = 1
+  if (type === 'frontendDependencies' && needsFrontend.value) minLength = 1
   if (state.value[type].length > minLength) {
     const newDeps = state.value[type].filter((_, i) => i !== index)
     updateField(type, newDeps)
@@ -127,63 +129,65 @@ function updateEnvVar(index, field, value) {
       </p>
     </div>
 
-    <USeparator />
-
     <!-- Backend Dependencies -->
-    <div class="space-y-3">
-      <div class="flex items-center justify-between">
-        <label class="font-medium">Backend Dependencies</label>
-        <UButton
-          size="xs"
-          variant="soft"
-          icon="i-lucide-plus"
-          label="إضافة"
-          @click="addDep('backendDependencies')"
-        />
-      </div>
-
-      <div class="flex flex-wrap gap-1 mb-2">
-        <UButton
-          v-for="dep in commonBackendDeps"
-          :key="dep"
-          size="xs"
-          :variant="state.backendDependencies.includes(dep) ? 'solid' : 'ghost'"
-          @click="addCommonDep('backendDependencies', dep)"
-        >
-          {{ dep }}
-        </UButton>
-      </div>
-
-      <div class="flex flex-wrap gap-2">
-        <div
-          v-for="(dep, index) in state.backendDependencies"
-          :key="index"
-          class="flex gap-1"
-        >
-          <UInput
-            :model-value="dep"
-            placeholder="package-name"
-            size="sm"
-            dir="ltr"
-            class="w-40"
-            @update:model-value="updateDep('backendDependencies', index, $event)"
-          />
+    <template v-if="needsBackend">
+      <USeparator />
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <label class="font-medium">Backend Dependencies</label>
           <UButton
-            v-if="state.backendDependencies.length > 1"
-            size="sm"
-            color="error"
-            variant="ghost"
-            icon="i-lucide-x"
-            @click="removeDep('backendDependencies', index)"
+            size="xs"
+            variant="soft"
+            icon="i-lucide-plus"
+            label="إضافة"
+            @click="addDep('backendDependencies')"
           />
         </div>
-      </div>
-    </div>
 
-    <USeparator />
+        <div class="flex flex-wrap gap-1 mb-2">
+          <UButton
+            v-for="dep in commonBackendDeps"
+            :key="dep"
+            size="xs"
+            :variant="state.backendDependencies.includes(dep) ? 'solid' : 'ghost'"
+            @click="addCommonDep('backendDependencies', dep)"
+          >
+            {{ dep }}
+          </UButton>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <div
+            v-for="(dep, index) in state.backendDependencies"
+            :key="index"
+            class="flex gap-1"
+          >
+            <UInput
+              :model-value="dep"
+              placeholder="package-name"
+              size="sm"
+              dir="ltr"
+              class="w-40"
+              @update:model-value="updateDep('backendDependencies', index, $event)"
+            />
+            <UButton
+              v-if="state.backendDependencies.length > 1"
+              size="sm"
+              color="error"
+              variant="ghost"
+              icon="i-lucide-x"
+              @click="removeDep('backendDependencies', index)"
+            />
+          </div>
+        </div>
+      </div>
+    </template>
 
     <!-- Frontend Dependencies -->
-    <div class="space-y-3">
+    <template v-if="needsFrontend">
+      <USeparator />
+    </template>
+    <div v-if="needsFrontend" class="space-y-3">
       <div class="flex items-center justify-between">
         <label class="font-medium">Frontend Dependencies</label>
         <UButton
@@ -448,24 +452,25 @@ function updateEnvVar(index, field, value) {
       </template>
     </FormDynamicArrayField>
 
-    <USeparator />
-
     <!-- Seed Data -->
-    <UFormField
-      label="بيانات تجريبية (Seed Data)"
-      name="seedData"
-    >
-      <UTextarea
-        v-model="state.seedData"
-        placeholder="اكتب بيانات تجريبية للاختبار، مثال:
+    <template v-if="needsDatabase">
+      <USeparator />
+      <UFormField
+        label="بيانات تجريبية (Seed Data)"
+        name="seedData"
+      >
+        <UTextarea
+          v-model="state.seedData"
+          placeholder="اكتب بيانات تجريبية للاختبار، مثال:
 Users:
 - name: أحمد, email: ahmed@test.com, password: 123456
 
 Products:
 - name: لابتوب HP, price: 15000, stock: 10"
-        :rows="4"
-        autoresize
-      />
-    </UFormField>
+          :rows="4"
+          autoresize
+        />
+      </UFormField>
+    </template>
   </div>
 </template>
