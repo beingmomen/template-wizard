@@ -45,8 +45,11 @@ project-template-wizard/
 │   │   └── useZipGenerator.ts                 # توليد ZIP بكل الملفات
 │   ├── config/
 │   │   └── stepRegistry.ts                    # Step Registry: component + schema + dataExtractor لكل خطوة
+│   ├── data/
+│   │   ├── changelog.js                       # بيانات سجل التحديثات (releases array + getVersionBadgeColor)
+│   │   └── upgrade-analysis.md                # تحليل تغييرات الترقية
 │   ├── pages/
-│   │   ├── index.vue                          # الصفحة الرئيسية
+│   │   ├── index.vue                          # الصفحة الرئيسية: 4 بطاقات مميزات + عرض 7+7 خطوة تكيّفية + أزرار CTA
 │   │   ├── wizard/index.vue                   # إنشاء مشروع جديد
 │   │   ├── wizard/[id].vue                    # صفحة الويزارد بـ ID المشروع
 │   │   ├── projects.vue                       # قائمة المشاريع

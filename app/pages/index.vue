@@ -25,7 +25,7 @@ function handleContinue() {
 
 <template>
   <UContainer class="py-12">
-    <div class="max-w-3xl mx-auto text-center space-y-8">
+    <div class="max-w-5xl mx-auto text-center space-y-8">
       <!-- Hero -->
       <div class="space-y-4">
         <UIcon name="i-lucide-file-code-2" class="w-20 h-20 mx-auto text-primary-500" />
@@ -33,45 +33,57 @@ function handleContinue() {
           معالج مواصفات المشروع
         </h1>
         <p class="text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
-          أنشئ ملف مواصفات مشروع متكامل وجاهز للاستخدام مع Claude Code في دقائق
+          معالج تكيّفي يولّد مواصفات مشروع متكاملة لأي نوع تطبيق — جاهزة للاستخدام مع AI
         </p>
       </div>
 
       <!-- Features -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-right">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-right">
         <UCard>
           <template #header>
             <div class="flex items-center gap-3">
-              <UIcon name="i-lucide-zap" class="w-8 h-8 text-yellow-500" />
-              <span class="font-semibold">سريع</span>
+              <UIcon name="i-lucide-settings-2" class="w-8 h-8 text-yellow-500" />
+              <span class="font-semibold">معالج تكيّفي</span>
             </div>
           </template>
           <p class="text-sm text-gray-600 dark:text-gray-400">
-            9 خطوات بسيطة لإنشاء مواصفات كاملة لمشروعك
+            14 خطوة ذكية تتكيف مع نوع مشروعك — تظهر فقط الخطوات المناسبة
           </p>
         </UCard>
 
         <UCard>
           <template #header>
             <div class="flex items-center gap-3">
-              <UIcon name="i-lucide-check-circle" class="w-8 h-8 text-green-500" />
-              <span class="font-semibold">منظم</span>
+              <UIcon name="i-lucide-layers" class="w-8 h-8 text-green-500" />
+              <span class="font-semibold">كل أنواع المشاريع</span>
             </div>
           </template>
           <p class="text-sm text-gray-600 dark:text-gray-400">
-            يغطي كل جوانب المشروع: قاعدة البيانات، API، الواجهة، والمزيد
+            Fullstack, Frontend, Backend, CLI, Desktop, مكتبات, إضافات كروم, وتكامل
           </p>
         </UCard>
 
         <UCard>
           <template #header>
             <div class="flex items-center gap-3">
-              <UIcon name="i-lucide-download" class="w-8 h-8 text-blue-500" />
-              <span class="font-semibold">قابل للتحميل</span>
+              <UIcon name="i-lucide-brain" class="w-8 h-8 text-purple-500" />
+              <span class="font-semibold">دعم الذكاء الاصطناعي</span>
             </div>
           </template>
           <p class="text-sm text-gray-600 dark:text-gray-400">
-            احصل على ملف Markdown جاهز للاستخدام فوراً
+            إعدادات AI، نماذج محلية وسحابية، تفضيل العتاد، ودعم سطح المكتب والنظام
+          </p>
+        </UCard>
+
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-3">
+              <UIcon name="i-lucide-file-archive" class="w-8 h-8 text-blue-500" />
+              <span class="font-semibold">تصدير متعدد</span>
+            </div>
+          </template>
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            Markdown, CLAUDE.md, AI Prompt, وملف ZIP كامل مع .mcp.json
           </p>
         </UCard>
       </div>
@@ -79,44 +91,103 @@ function handleContinue() {
       <!-- Steps Preview -->
       <UCard>
         <template #header>
-          <span class="font-semibold">الخطوات</span>
+          <div class="flex items-center justify-between">
+            <span class="font-semibold">خطوات المعالج</span>
+            <UBadge color="primary" variant="subtle">14 خطوة</UBadge>
+          </div>
         </template>
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-          <div class="flex items-center gap-2">
-            <UBadge color="primary" variant="subtle">1</UBadge>
-            <span>نظرة عامة</span>
+        <div class="space-y-6">
+          <div>
+            <div class="flex items-center gap-2 mb-3">
+              <UIcon name="i-lucide-lock" class="w-4 h-4 text-primary-500" />
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">خطوات أساسية (تظهر دائماً)</span>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-sm">
+              <div class="flex items-center gap-2">
+                <UBadge color="primary" variant="subtle">1</UBadge>
+                <span>نظرة عامة</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <UBadge color="primary" variant="subtle">2</UBadge>
+                <span>قصص المستخدم</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <UBadge color="primary" variant="subtle">3</UBadge>
+                <span>التقنيات</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <UBadge color="primary" variant="subtle">4</UBadge>
+                <span>ملخص للمناقشة</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <UBadge color="primary" variant="subtle">5</UBadge>
+                <span>المميزات</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <UBadge color="primary" variant="subtle">6</UBadge>
+                <span>المتطلبات</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <UBadge color="primary" variant="subtle">7</UBadge>
+                <span>إرشادات التطوير</span>
+              </div>
+            </div>
           </div>
-          <div class="flex items-center gap-2">
-            <UBadge color="primary" variant="subtle">2</UBadge>
-            <span>قصص المستخدم</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <UBadge color="primary" variant="subtle">3</UBadge>
-            <span>التقنيات</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <UBadge color="primary" variant="subtle">4</UBadge>
-            <span>قاعدة البيانات</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <UBadge color="primary" variant="subtle">5</UBadge>
-            <span>الـ API</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <UBadge color="primary" variant="subtle">6</UBadge>
-            <span>الواجهة</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <UBadge color="primary" variant="subtle">7</UBadge>
-            <span>المميزات</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <UBadge color="primary" variant="subtle">8</UBadge>
-            <span>المتطلبات</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <UBadge color="primary" variant="subtle">9</UBadge>
-            <span>إرشادات التطوير</span>
+
+          <USeparator />
+
+          <div>
+            <div class="flex items-center gap-2 mb-3">
+              <UIcon name="i-lucide-toggle-right" class="w-4 h-4 text-warning-500" />
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">خطوات شرطية (تظهر حسب نوع المشروع)</span>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-sm">
+              <div class="flex items-center gap-2">
+                <UBadge color="warning" variant="subtle">
+                  <UIcon name="i-lucide-shield" class="w-3 h-3" />
+                </UBadge>
+                <span>الصلاحيات</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <UBadge color="warning" variant="subtle">
+                  <UIcon name="i-lucide-database" class="w-3 h-3" />
+                </UBadge>
+                <span>قاعدة البيانات</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <UBadge color="warning" variant="subtle">
+                  <UIcon name="i-lucide-file-text" class="w-3 h-3" />
+                </UBadge>
+                <span>ملخص مع DB</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <UBadge color="warning" variant="subtle">
+                  <UIcon name="i-lucide-plug" class="w-3 h-3" />
+                </UBadge>
+                <span>واجهات التواصل</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <UBadge color="warning" variant="subtle">
+                  <UIcon name="i-lucide-layout" class="w-3 h-3" />
+                </UBadge>
+                <span>الواجهة</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <UBadge color="warning" variant="subtle">
+                  <UIcon name="i-lucide-brain" class="w-3 h-3" />
+                </UBadge>
+                <span>إعدادات الذكاء الاصطناعي</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <UBadge color="warning" variant="subtle">
+                  <UIcon name="i-lucide-monitor" class="w-3 h-3" />
+                </UBadge>
+                <span>سطح المكتب والنظام</span>
+              </div>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-3">
+              تظهر هذه الخطوات تلقائياً بناءً على نوع المشروع، بيئة التشغيل، مستوى الذكاء الاصطناعي، واختيارات التقنيات
+            </p>
           </div>
         </div>
       </UCard>
@@ -169,7 +240,7 @@ function handleContinue() {
         color="primary"
         variant="subtle"
         title="ملاحظة"
-        description="يتم حفظ بياناتك تلقائياً في قاعدة البيانات. يمكنك متابعة العمل من أي جهاز باستخدام رابط المشروع."
+        description="يتم حفظ بياناتك تلقائياً. المعالج يتكيف مع مشروعك ويُصدّر ملفات Markdown, CLAUDE.md, AI Prompt, وملف ZIP كامل."
       />
     </div>
   </UContainer>
