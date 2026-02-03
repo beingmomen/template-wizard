@@ -10,13 +10,15 @@ export function needsBackend(state: WizardState) {
 }
 
 export function needsDatabase(state: WizardState) {
-  return ['fullstack', 'backend-only'].includes(state.projectType)
-    && state.techStack?.database !== 'None'
+  return state.techStack?.database !== 'None'
+    && state.techStack?.database !== ''
+    && !!state.techStack?.database
 }
 
 export function needsAuth(state: WizardState) {
-  return ['fullstack', 'backend-only', 'frontend-only'].includes(state.projectType)
-    && state.techStack?.auth !== 'None'
+  return state.techStack?.auth !== 'None'
+    && state.techStack?.auth !== ''
+    && !!state.techStack?.auth
 }
 
 export function needsAI(state: WizardState) {
@@ -28,8 +30,9 @@ export function needsDesktopSystem(state: WizardState) {
 }
 
 export function needsAPI(state: WizardState) {
-  return ['fullstack', 'backend-only', 'library', 'integration'].includes(state.projectType)
+  return (state.communicationInterfaces?.length > 0)
     || state.runtimeTargets?.some(t => ['desktop', 'cli', 'system'].includes(t))
+    || ['fullstack', 'backend-only', 'library', 'integration'].includes(state.projectType)
 }
 
 export function needsPorts(state: WizardState) {
@@ -45,6 +48,18 @@ export function needsEnvVars(state: WizardState) {
 
 export function needsHttpApi(state: WizardState) {
   return needsAPI(state) && state.communicationInterfaces?.includes('http-api')
+}
+
+export function needsServerBackend(state: WizardState) {
+  return needsBackend(state)
+    && (state.runtimeTargets?.some(t => t === 'web')
+      || state.communicationInterfaces?.includes('http-api'))
+}
+
+export function needsLocalEngine(state: WizardState) {
+  return state.runtimeTargets?.some(t => ['desktop', 'system'].includes(t))
+    && state.communicationInterfaces?.some(i => ['local-ipc', 'tauri-commands'].includes(i))
+    && !state.communicationInterfaces?.includes('http-api')
 }
 
 export function isFullyLocal(state: WizardState) {

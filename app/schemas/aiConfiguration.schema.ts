@@ -5,7 +5,10 @@ const aiModelSchema = z.object({
   isOpenSource: z.boolean(),
   isAPI: z.boolean(),
   offlineSupport: z.boolean()
-})
+}).refine(
+  model => model.isAPI || model.offlineSupport,
+  { message: 'النماذج المحلية يجب أن تدعم العمل بدون إنترنت' }
+)
 
 export const aiConfigurationSchema = z.object({
   aiConfiguration: z.object({

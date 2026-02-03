@@ -103,17 +103,21 @@ Container.vue بيستخدم `defineAsyncComponent` و `<component :is>` لعر�
 
 ### Centralized Capabilities
 دوال `needsX` اللي كانت مكررة في أكتر من composable اتنقلت كلها لـ `app/utils/projectCapabilities.ts`:
-- `needsFrontend(state)` - المشروع محتاج واجهة؟
-- `needsBackend(state)` - المشروع محتاج backend؟
-- `needsDatabase(state)` - المشروع محتاج قاعدة بيانات؟ (يرجع false لو database = 'None')
-- `needsAI(state)` - المشروع فيه ذكاء اصطناعي؟
+- `needsFrontend(state)` - المشروع محتاج واجهة؟ (projectType أو runtimeTargets)
+- `needsBackend(state)` - المشروع محتاج backend؟ (projectType = fullstack/backend-only)
+- `needsDatabase(state)` - المشروع محتاج قاعدة بيانات؟ (يعتمد فقط على `techStack.database` — بدون فحص projectType)
+- `needsAI(state)` - المشروع فيه ذكاء اصطناعي؟ (intelligenceLevel !== 'none')
 - `needsDesktopSystem(state)` - المشروع بيشتغل على سطح المكتب/النظام؟
-- `needsAPI(state)` - المشروع محتاج واجهة تواصل؟
-- `needsAuth(state)` - المشروع محتاج مصادقة؟ (يرجع false لو auth = 'None')
+- `needsAPI(state)` - المشروع محتاج واجهة تواصل؟ (يعتمد أولاً على communicationInterfaces ثم runtimeTargets ثم projectType كـ fallback)
+- `needsAuth(state)` - المشروع محتاج مصادقة؟ (يعتمد فقط على `techStack.auth` — بدون فحص projectType)
 - `needsPorts(state)` - المشروع محتاج منافذ؟ (web أو fullstack/backend-only)
 - `needsEnvVars(state)` - المشروع محتاج متغيرات بيئة؟ (backend أو خدمات خارجية أو AI عبر API)
 - `needsHttpApi(state)` - المشروع محتاج HTTP API؟
+- `needsServerBackend(state)` - المشروع محتاج backend ويب؟ (needsBackend + web/http-api)
+- `needsLocalEngine(state)` - المشروع محتاج محرك محلي؟ (desktop/system + local-ipc/tauri بدون http-api)
 - `isFullyLocal(state)` - المشروع محلي بالكامل؟ (بدون backend أو خدمات خارجية أو AI عبر API)
+
+**ملاحظة مهمة (v1.10.0):** `projectType` أصبح LEGACY/COMPATIBILITY — الدوال تعتمد أساساً على إشارات دلالية مثل `techStack`, `communicationInterfaces`, `runtimeTargets`. كل `visibleWhen` callbacks في WIZARD_STEPS تستدعي هذه الدوال بدلاً من منطق مكرر.
 
 ---
 
@@ -125,18 +129,20 @@ Container.vue بيستخدم `defineAsyncComponent` و `<component :is>` لعر�
 |---|--------|--------|---------------------------|
 | 0 | نظرة عامة (Overview) | `0` | دايماً |
 | 1 | قصص المستخدم (User Stories) | `1` | دايماً |
-| 2 | الصلاحيات (Permissions) | `2` | `projectType` = fullstack أو backend-only **و** `auth !== 'None'` |
+| 2 | الصلاحيات (Permissions) | `2` | `needsAuth(s)` — techStack.auth مش 'None' ومش فاضي |
 | 3 | التقنيات (Technical) | `3` | دايماً |
-| 4 | إعدادات الذكاء الاصطناعي (AI Config) | `12` | `intelligenceLevel` != 'none' |
-| 5 | إمكانيات النظام (Desktop/System) | `13` | `runtimeTargets` يشمل desktop أو system |
+| 4 | إعدادات الذكاء الاصطناعي (AI Config) | `12` | `needsAI(s)` — intelligenceLevel !== 'none' |
+| 5 | إمكانيات النظام (Desktop/System) | `13` | `needsDesktopSystem(s)` — runtimeTargets يشمل desktop أو system |
 | 6 | ملخص للمناقشة (Summary) | `4` | دايماً |
-| 7 | قاعدة البيانات (Database) | `5` | `projectType` = fullstack, backend-only, cli-tool, integration **و** `database !== 'None'` |
-| 8 | ملخص مع DB (Summary 2) | `6` | نفس Database |
-| 9 | التواصل (Communication) | `7` | `projectType` = fullstack, backend-only, library, integration أو `runtimeTargets` يشمل desktop, cli, system |
-| 10 | الواجهة (Frontend) | `8` | `projectType` = fullstack, frontend-only, chrome-extension, integration أو `runtimeTargets` يشمل web, mobile, desktop |
+| 7 | قاعدة البيانات (Database) | `5` | `needsDatabase(s)` — techStack.database مش 'None' ومش فاضي |
+| 8 | ملخص مع DB (Summary 2) | `6` | `needsDatabase(s)` — نفس Database |
+| 9 | التواصل (Communication) | `7` | `needsAPI(s)` — communicationInterfaces أو runtimeTargets أو projectType كـ fallback |
+| 10 | الواجهة (Frontend) | `8` | `needsFrontend(s)` — projectType أو runtimeTargets يشمل web/mobile/desktop |
 | 11 | المميزات (Features) | `9` | دايماً |
 | 12 | المتطلبات (Dependencies) | `10` | دايماً |
 | 13 | إرشادات التطوير (Guidelines) | `11` | دايماً |
+
+كل خطوة شرطية عندها كمان `visibilityReason(state)` بترجع نص عربي يوضح سبب الظهور (بيانات وصفية للاستخدام المستقبلي).
 
 ---
 
@@ -337,6 +343,7 @@ interface DevelopmentWarning { warning, enabled, isDefault }
 ### الخطوة 12 - إعدادات الذكاء الاصطناعي
 - `aiConfiguration.domains`: مصفوفة، عنصر واحد على الأقل
 - `aiConfiguration.models`: مصفوفة، نموذج واحد على الأقل (كل نموذج يتطلب name)
+  - **Zod refine rule (v1.10.0)**: `model.isAPI || model.offlineSupport` — النماذج المحلية (غير API) يجب أن تدعم العمل بدون إنترنت
 - `aiConfiguration.supportedLanguages`: مصفوفة (اختيارية)
 - `aiConfiguration.hardwarePreference`: مطلوب ('gpu-preferred', 'cpu-preferred', 'cpu-only', 'any')
 
@@ -350,9 +357,11 @@ interface DevelopmentWarning { warning, enabled, isDefault }
 ### الخطوة 10 - المتطلبات (Conditional Validation)
 يستخدم factory function `createDependenciesSchema(state)` بدل schema ثابت:
 - `backendDependencies`: مطلوب (min 1) فقط لو `needsBackend(state)` — اختياري للباقي
+  - **Ecosystem guardrail (v1.10.0)**: `.refine()` يرفض حزم Python/PHP/Rust (مثل numpy, flask, laravel, tokio) في تبعيات JavaScript
 - `frontendDependencies`: مطلوب (min 1) فقط لو `needsFrontend(state)` — اختياري للباقي
+  - **Ecosystem guardrail (v1.10.0)**: نفس القاعدة — منع حزم من نظام بيئي مختلف
 - `environmentVariables`: مطلوب (min 1) فقط لو `needsEnvVars(state)` — اختياري للباقي
-- `aiDependencies`, `systemDependencies`, `buildDependencies`: مصفوفات اختيارية دايماً
+- `aiDependencies`, `systemDependencies`, `buildDependencies`: مصفوفات اختيارية دايماً (بدون ecosystem guardrail — حزم Python مسموحة هنا)
 
 ### الخطوات 1-11 (باقي)
 نفس الـ validation القديم مع الإضافات التالية:
@@ -377,6 +386,8 @@ interface DevelopmentWarning { warning, enabled, isDefault }
 - `needsPorts` - computed: المشروع محتاج منافذ
 - `needsEnvVars` - computed: المشروع محتاج متغيرات بيئة
 - `needsHttpApi` - computed: المشروع محتاج HTTP API
+- `needsServerBackend` - computed (v1.10.0): المشروع محتاج backend ويب (needsBackend + web/http-api)
+- `needsLocalEngine` - computed (v1.10.0): المشروع محتاج محرك محلي (desktop/system + local-ipc/tauri بدون http-api)
 - `fullyLocal` - computed: المشروع محلي بالكامل
 - `updateField(key, value)` - تحديث حقل
 - `updateNestedField(key, nestedKey, value)` - تحديث حقل متداخل
@@ -388,6 +399,14 @@ interface DevelopmentWarning { warning, enabled, isDefault }
 - `migrateState(data)` - ترحيل بيانات قديمة بإضافة defaults للحقول الجديدة
 
 **الحفظ التلقائي**: يراقب التغييرات ويحفظ في MongoDB بعد 1000ms debounce
+
+**مراقبات ذكية (v1.10.0)**:
+- **adjustCommunicationDefaults watcher**: عند تغيير `runtimeTargets`، لو `communicationInterfaces` لسه على القيمة الافتراضية `['http-api']`:
+  - desktop/system بدون web → يتحول لـ `['local-ipc', 'tauri-commands']`
+  - cli بدون web/desktop → يتحول لـ `['cli-flags']`
+- **AI auto-correction watcher**: عند تغيير `aiConfiguration.models`:
+  - لو نموذج مش API → يفعّل `offlineSupport` تلقائياً
+  - لو فيه نموذج محلي مفتوح المصدر وتفضيل العتاد `any` → يتحول لـ `cpu-preferred`
 
 ### useStepValidation
 **الوظيفة**: التحقق من صحة بيانات كل خطوة بـ Zod عبر Step Registry
@@ -529,8 +548,10 @@ buildDependencies → []
 - الحد الأدنى لعدد التبعيات: يتغير حسب القدرات (0 للاختياري، 1 للمطلوب)
 
 ### StepAIConfiguration.vue
-- تعيين تلقائي لتفضيل العتاد إلى `cpu-preferred` عند إضافة نماذج محلية (offlineSupport && !isAPI) وكان التفضيل `any`
-- تفعيل تلقائي لـ `offlineSupport` عند إلغاء `isAPI` لنموذج
+- تصحيح تلقائي عبر watcher مركزي في `useWizardState` (v1.10.0):
+  - تعيين `offlineSupport = true` تلقائياً عند إلغاء `isAPI` لنموذج
+  - تعيين `hardwarePreference = 'cpu-preferred'` عند وجود نموذج محلي مفتوح المصدر وكان التفضيل `any`
+- تحقق Zod: النماذج المحلية (غير API) بدون دعم العمل بدون إنترنت → خطأ validation
 
 ---
 
@@ -547,3 +568,4 @@ buildDependencies → []
 9. **Step Registry** - أي خطوة جديدة لازم تتسجل في `stepRegistry.ts`
 10. **Centralized Capabilities** - دوال `needsX` كلها في `projectCapabilities.ts`
 11. **visibleWhen functions** - ظهور الخطوات محدد بدوال في `WIZARD_STEPS` مش بمصفوفات ثابتة
+12. **projectType = LEGACY** - الدوال تعتمد على إشارات دلالية (`techStack`, `communicationInterfaces`, `runtimeTargets`) — projectType يُستخدم فقط كـ fallback للتوافق مع المشاريع القديمة

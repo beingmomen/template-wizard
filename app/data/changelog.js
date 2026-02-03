@@ -1,5 +1,20 @@
 export const releases = [
   {
+    version: '1.10.0',
+    date: '2026-02-03',
+    type: 'feature',
+    changes: [
+      'تقليل الاعتماد على projectType — أصبحت دوال الظهور الشرطي تعتمد على إشارات دلالية (techStack, communicationInterfaces, runtimeTargets) بدلاً من نوع المشروع مباشرة',
+      'إضافة دالتين جديدتين: needsServerBackend و needsLocalEngine للتفريق بين Backend ويب ومحرك محلي (مثل Whisper/Python)',
+      'تحديث visibleWhen لجميع الخطوات الشرطية (7 خطوات) لاستدعاء دوال projectCapabilities بدلاً من منطق مكرر',
+      'إضافة خاصية visibilityReason لكل خطوة شرطية — نص عربي يوضح سبب ظهور الخطوة (بيانات وصفية للاستخدام المستقبلي)',
+      'إضافة مراقب ذكي لتغيير communicationInterfaces تلقائياً عند تغيير بيئات التشغيل (سطح مكتب → local-ipc + tauri-commands، CLI → cli-flags)',
+      'إضافة تصحيح تلقائي لإعدادات الذكاء الاصطناعي — النماذج المحلية تُفعَّل فيها offlineSupport تلقائياً وتفضيل العتاد يتحول إلى cpu-preferred',
+      'إضافة تحقق Zod للنماذج المحلية — رفض النماذج غير API بدون دعم العمل بدون إنترنت',
+      'إضافة حواجز النظام البيئي للتبعيات — منع إضافة حزم Python/PHP/Rust في قوائم تبعيات JavaScript مع رسالة تحذير واضحة'
+    ]
+  },
+  {
     version: '1.9.0',
     date: '2026-02-03',
     type: 'feature',

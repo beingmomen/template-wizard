@@ -9,6 +9,19 @@ const envVariableSchema = z.object({
   example: z.string().min(1, 'المثال مطلوب')
 })
 
+const PYTHON_PACKAGES = ['numpy', 'pandas', 'flask', 'django', 'fastapi', 'torch', 'tensorflow',
+  'scikit-learn', 'matplotlib', 'scipy', 'requests', 'beautifulsoup4', 'celery', 'pillow',
+  'opencv-python', 'transformers', 'langchain', 'whisper', 'pytest', 'pip']
+
+const PHP_PACKAGES = ['laravel', 'symfony', 'composer', 'artisan', 'eloquent', 'blade', 'phpunit']
+
+const RUST_PACKAGES = ['tokio', 'serde', 'cargo', 'actix', 'reqwest', 'clap']
+
+function isNonJsPackage(name: string): boolean {
+  const lower = name.toLowerCase()
+  return PYTHON_PACKAGES.includes(lower) || PHP_PACKAGES.includes(lower) || RUST_PACKAGES.includes(lower)
+}
+
 export const packageManagerOptions = [
   { label: 'pnpm (Recommended)', value: 'pnpm' },
   { label: 'npm', value: 'npm' },
@@ -35,10 +48,16 @@ export function createDependenciesSchema(state: WizardState) {
   return z.object({
     packageManager: z.enum(['pnpm', 'npm', 'yarn', 'bun']).optional().default('pnpm'),
     backendDependencies: _needsBackend
-      ? z.array(z.string().min(1)).min(1, 'أضف مكتبة واحدة على الأقل')
+      ? z.array(z.string().min(1)).min(1, 'أضف مكتبة واحدة على الأقل').refine(
+          deps => !deps.some(d => isNonJsPackage(d)),
+          { message: 'تم العثور على حزم من نظام بيئي مختلف (Python/PHP/Rust) في تبعيات JavaScript' }
+        )
       : z.array(z.string()).optional(),
     frontendDependencies: _needsFrontend
-      ? z.array(z.string().min(1)).min(1, 'أضف مكتبة واحدة على الأقل')
+      ? z.array(z.string().min(1)).min(1, 'أضف مكتبة واحدة على الأقل').refine(
+          deps => !deps.some(d => isNonJsPackage(d)),
+          { message: 'تم العثور على حزم من نظام بيئي مختلف (Python/PHP/Rust) في تبعيات JavaScript' }
+        )
       : z.array(z.string()).optional(),
     aiDependencies: z.array(z.string()).optional(),
     systemDependencies: z.array(z.string()).optional(),

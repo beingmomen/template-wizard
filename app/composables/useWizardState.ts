@@ -2,7 +2,7 @@ import { nanoid } from 'nanoid'
 import { useDebounceFn } from '@vueuse/core'
 import { initialWizardState, WIZARD_STEPS } from '~/types/wizard.types'
 import type { WizardState, WizardStep } from '~/types/wizard.types'
-import { needsFrontend as _needsFrontend, needsBackend as _needsBackend, needsDatabase as _needsDatabase, needsAuth as _needsAuth, needsAI as _needsAI, needsDesktopSystem as _needsDesktopSystem, needsPorts as _needsPorts, needsEnvVars as _needsEnvVars, needsHttpApi as _needsHttpApi, isFullyLocal as _isFullyLocal } from '~/utils/projectCapabilities'
+import { needsFrontend as _needsFrontend, needsBackend as _needsBackend, needsDatabase as _needsDatabase, needsAuth as _needsAuth, needsAI as _needsAI, needsDesktopSystem as _needsDesktopSystem, needsPorts as _needsPorts, needsEnvVars as _needsEnvVars, needsHttpApi as _needsHttpApi, isFullyLocal as _isFullyLocal, needsServerBackend as _needsServerBackend, needsLocalEngine as _needsLocalEngine } from '~/utils/projectCapabilities'
 
 const STORAGE_KEY = 'project-template-wizard-state'
 const DEVICE_ID_KEY = 'wizard-device-id'
@@ -35,6 +35,54 @@ export function useWizardState() {
   const needsEnvVars = computed(() => _needsEnvVars(state.value))
   const needsHttpApi = computed(() => _needsHttpApi(state.value))
   const fullyLocal = computed(() => _isFullyLocal(state.value))
+  const needsServerBackend = computed(() => _needsServerBackend(state.value))
+  const needsLocalEngine = computed(() => _needsLocalEngine(state.value))
+
+  const adjustCommunicationDefaults = (targets: string[]) => {
+    const current = state.value.communicationInterfaces
+    const isDefault = current?.length === 1 && current[0] === 'http-api'
+    if (!isDefault) return
+
+    const hasWeb = targets.includes('web')
+    const hasDesktopOrSystem = targets.some(t => ['desktop', 'system'].includes(t))
+    const hasCli = targets.includes('cli')
+
+    if (!hasWeb && hasDesktopOrSystem) {
+      state.value.communicationInterfaces = ['local-ipc', 'tauri-commands']
+    } else if (!hasWeb && hasCli && !hasDesktopOrSystem) {
+      state.value.communicationInterfaces = ['cli-flags']
+    }
+  }
+
+  watch(
+    () => state.value.runtimeTargets,
+    (newTargets) => {
+      if (!isLoading.value && newTargets) {
+        adjustCommunicationDefaults([...newTargets])
+      }
+    }
+  )
+
+  watch(
+    () => state.value.aiConfiguration?.models,
+    (models) => {
+      if (!models || isLoading.value) return
+      let changed = false
+      for (const model of models) {
+        if (!model.isAPI && !model.offlineSupport) {
+          model.offlineSupport = true
+          changed = true
+        }
+      }
+      if (changed) {
+        const hasLocalModel = models.some(m => !m.isAPI && m.isOpenSource)
+        if (hasLocalModel && state.value.aiConfiguration.hardwarePreference === 'any') {
+          state.value.aiConfiguration.hardwarePreference = 'cpu-preferred'
+        }
+      }
+    },
+    { deep: true }
+  )
 
   // Helper: Check if a specific step is visible
   const isStepVisible = (stepId: number): boolean => {
@@ -490,6 +538,8 @@ export function useWizardState() {
     needsEnvVars,
     needsHttpApi,
     fullyLocal,
+    needsServerBackend,
+    needsLocalEngine,
     isStepVisible,
     getVisibleStepIndex,
     getStepIdFromVisibleIndex,
